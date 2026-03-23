@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: db-metrics-monitor
+  datasource:
+    url: ${DB_URL_ADMIN:jdbc:postgresql://localhost:5432/observability}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      pool-name: db-metrics-monitor-pool
+      connection-timeout: 5000
+      validation-timeout: 3000
+      connection-init-sql: SET application_name TO '${spring.application.name}'
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  health:
+    db:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  security:
+    api-key: ${APP_API_KEY:public-dev-key}
+    header-name: ${APP_API_KEY_HEADER:X-API-KEY}
+    protect-read-endpoints: ${APP_PROTECT_READ_ENDPOINTS:false}
+  scheduler:
+    snapshot-cron: ${APP_SNAPSHOT_CRON:0 * * * * *}
+  monitoring:
+    top-query-default-limit: ${APP_TOP_QUERY_DEFAULT_LIMIT:20}
+    running-query-default-min-seconds: ${APP_RUNNING_QUERY_MIN_SECONDS:30}
+  history:
+    sqlite-path: ${APP_HISTORY_SQLITE_PATH:./data/db-metrics-history.db}
+    cpu-threshold-percent: ${APP_HISTORY_CPU_THRESHOLD_PERCENT:60}
+    memory-threshold-percent: ${APP_HISTORY_MEMORY_THRESHOLD_PERCENT:60}
+    recent-limit: ${APP_HISTORY_RECENT_LIMIT:200}
+  ai:
+    enabled: ${APP_AI_ENABLED:true}
+    base-url: ${APP_OPENAI_BASE_URL:https://api.openai.com/v1}
+    model: ${APP_OPENAI_MODEL:gpt-5-mini}
+    api-key: ${APP_OPENAI_API_KEY:}
+    max-output-tokens: ${APP_OPENAI_MAX_OUTPUT_TOKENS:900}

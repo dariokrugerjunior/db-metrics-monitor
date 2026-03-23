@@ -1,0 +1,50 @@
+@baseUrl = http://localhost:8080
+@apiKey = change-me
+
+### Healthcheck
+GET {{baseUrl}}/api/v1/health
+
+### Actuator health
+GET {{baseUrl}}/actuator/health
+
+### Locks
+GET {{baseUrl}}/api/v1/db/locks
+X-API-KEY: {{apiKey}}
+
+### Blocking locks
+GET {{baseUrl}}/api/v1/db/locks/blocking
+X-API-KEY: {{apiKey}}
+
+### Blocked locks
+GET {{baseUrl}}/api/v1/db/locks/blocked
+X-API-KEY: {{apiKey}}
+
+### Top queries
+GET {{baseUrl}}/api/v1/db/queries/top?limit=10
+X-API-KEY: {{apiKey}}
+
+### Running queries
+GET {{baseUrl}}/api/v1/db/queries/running?minDurationSeconds=30
+X-API-KEY: {{apiKey}}
+
+### Connections summary
+GET {{baseUrl}}/api/v1/db/connections/summary
+X-API-KEY: {{apiKey}}
+
+### System metrics
+GET {{baseUrl}}/api/v1/system/metrics
+X-API-KEY: {{apiKey}}
+
+### Dashboard summary
+GET {{baseUrl}}/api/v1/dashboard/summary
+X-API-KEY: {{apiKey}}
+
+### Terminate session
+POST {{baseUrl}}/api/v1/db/sessions/12345/terminate
+Content-Type: application/json
+X-API-KEY: {{apiKey}}
+
+{
+  "reason": "Blocking production workload",
+  "force": true
+}
