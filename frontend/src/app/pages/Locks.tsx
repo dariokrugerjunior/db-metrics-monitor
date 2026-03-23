@@ -190,14 +190,14 @@ export function Locks() {
       />
 
       <Dialog open={!!selectedLock} onOpenChange={() => setSelectedLock(null)}>
-        <DialogContent className="max-w-3xl border-[#27272a] bg-[#111116] text-white">
+        <DialogContent className="flex max-h-[85vh] max-w-3xl flex-col overflow-hidden border-[#27272a] bg-[#111116] text-white">
           <DialogHeader>
             <DialogTitle>Lock Details - PID {selectedLock?.pid}</DialogTitle>
             <DialogDescription className="text-[#a1a1aa]">
               Informações completas do lock reportado pelo backend.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="min-h-0 space-y-4 overflow-y-auto py-4 pr-2">
             <DetailRow label="Process ID" value={selectedLock?.pid} />
             <DetailRow label="User" value={selectedLock?.userName} />
             <DetailRow label="Database" value={selectedLock?.database} />
