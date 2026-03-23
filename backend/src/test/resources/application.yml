@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: db-metrics-monitor-test
+  datasource:
+    url: jdbc:postgresql://localhost:5432/test
+    username: test
+    password: test
+
+app:
+  security:
+    api-key: test-key
+    header-name: X-API-KEY
+    protect-read-endpoints: false

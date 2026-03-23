@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: db-metrics-monitor-postgres
+    environment:
+      POSTGRES_DB: observability
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements"
+      - "-c"
+      - "pg_stat_statements.track=all"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  app:
+    build:
+      context: ./backend
+    container_name: db-metrics-monitor-app
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: observability
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      APP_API_KEY: change-me
+      APP_PROTECT_READ_ENDPOINTS: "true"
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
