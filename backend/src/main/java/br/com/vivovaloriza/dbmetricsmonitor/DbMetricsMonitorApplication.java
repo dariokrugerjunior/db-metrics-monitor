@@ -1,6 +1,7 @@
 package br.com.vivovaloriza.dbmetricsmonitor;
 
 import br.com.vivovaloriza.dbmetricsmonitor.config.AppProperties;
+import br.com.vivovaloriza.dbmetricsmonitor.intelligence.config.DatabaseIntelligenceProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -8,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-@EnableConfigurationProperties(AppProperties.class)
+@EnableConfigurationProperties({AppProperties.class, DatabaseIntelligenceProperties.class})
 public class DbMetricsMonitorApplication {
 
     public static void main(String[] args) {

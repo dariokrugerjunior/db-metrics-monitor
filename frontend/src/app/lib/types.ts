@@ -164,3 +164,75 @@ export interface AiAnalysisHistoryResponse {
   analysis: string;
   createdAt: string;
 }
+
+export type HealthClassification = "HEALTHY" | "WARNING" | "CRITICAL";
+export type AlertSeverity = "INFO" | "WARNING" | "CRITICAL";
+export type RecommendationPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+export type AnomalySeverity = "INFO" | "WARNING" | "CRITICAL";
+
+export interface ScorePenaltyResponse {
+  code: string;
+  points: number;
+  message: string;
+}
+
+export interface ScoreBreakdownResponse {
+  category: string;
+  score: number;
+  penaltyPoints: number;
+  penalties: ScorePenaltyResponse[];
+}
+
+export interface DatabaseHealthScoreResponse {
+  score: number;
+  classification: HealthClassification;
+  penalties: ScorePenaltyResponse[];
+  breakdown: ScoreBreakdownResponse[];
+  summary: string;
+}
+
+export interface AlertItemResponse {
+  code: string;
+  title: string;
+  description: string;
+  severity: AlertSeverity;
+  category: string;
+  detectedAt: string;
+  suggestedAction: string;
+}
+
+export interface MetricBaselineResponse {
+  metric: string;
+  currentValue: number;
+  average: number;
+  median: number;
+  min: number;
+  max: number;
+  percentDeviation: number;
+}
+
+export interface AnomalyItemResponse {
+  code: string;
+  severity: AnomalySeverity;
+  message: string;
+  baseline: MetricBaselineResponse;
+}
+
+export interface RecommendationItemResponse {
+  code: string;
+  title: string;
+  description: string;
+  priority: RecommendationPriority;
+  rationale: string;
+  suggestedSteps: string[];
+  relatedSignals: string[];
+}
+
+export interface DatabaseIntelligenceOverviewResponse {
+  score: DatabaseHealthScoreResponse;
+  alerts: AlertItemResponse[];
+  anomalies: AnomalyItemResponse[];
+  recommendations: RecommendationItemResponse[];
+  generatedAt: string;
+  anomalyMessage: string;
+}
