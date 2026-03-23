@@ -1,6 +1,6 @@
 # Backend
 
-Backend REST em Java 21 + Spring Boot 3 para observabilidade operacional de PostgreSQL e da propria aplicacao.
+API REST em Java 21 + Spring Boot 3 para observabilidade e intelligence operacional de PostgreSQL.
 
 ## Stack
 
@@ -10,13 +10,14 @@ Backend REST em Java 21 + Spring Boot 3 para observabilidade operacional de Post
 - Spring Web
 - Spring JDBC
 - Spring Actuator
-- Micrometer
+- Micrometer / Prometheus
 - PostgreSQL Driver
+- SQLite JDBC
 - Bean Validation
 - Lombok
 - OpenAPI / Swagger
 
-## Estrutura
+## Modulos principais
 
 ```text
 src/main/java/br/com/vivovaloriza/dbmetricsmonitor
@@ -24,6 +25,7 @@ src/main/java/br/com/vivovaloriza/dbmetricsmonitor
 |-- controller
 |-- dto
 |-- exception
+|-- intelligence
 |-- model
 |-- repository
 |-- scheduler
@@ -31,9 +33,29 @@ src/main/java/br/com/vivovaloriza/dbmetricsmonitor
 `-- service
 ```
 
-## Como subir localmente
+## O que a API entrega
 
-### Variaveis de ambiente
+### Monitoramento operacional
+
+- locks ativos, bloqueados e bloqueantes
+- running queries e top queries
+- resumo de conexoes
+- cache hit ratio
+- metricas da aplicacao
+- dashboard consolidado
+- historico de incidentes
+
+### Intelligence operacional
+
+- score de saude do banco com breakdown por categoria
+- alertas acionaveis classificados por severidade
+- deteccao de anomalias com baseline historica
+- recomendacoes automaticas baseadas em correlacao de sinais
+- persistencia local de snapshots operacionais para baseline
+
+## Configuracao
+
+### Variaveis principais
 
 ```powershell
 $env:DB_URL_ADMIN="jdbc:postgresql://localhost:5432/observability"
@@ -43,7 +65,16 @@ $env:APP_API_KEY="change-me"
 $env:APP_PROTECT_READ_ENDPOINTS="true"
 ```
 
-### Subir com Maven
+### Properties de intelligence
+
+Os thresholds ficam em `backend/src/main/resources/application.yml` sob:
+
+- `db.intelligence.score.*`
+- `db.intelligence.alerts.*`
+- `db.intelligence.anomaly.*`
+- `db.intelligence.recommendation.*`
+
+## Subir localmente
 
 ```powershell
 cd backend
@@ -52,21 +83,34 @@ $env:Path="$env:JAVA_HOME\bin;$env:Path"
 mvn spring-boot:run
 ```
 
-### Subir com Docker Compose
-
-```powershell
-docker compose up --build
-```
-
 ## Endpoints principais
 
+### Core
+
 - `GET /api/v1/health`
-- `GET /api/v1/db/locks`
-- `GET /api/v1/db/queries/top?limit=20`
-- `GET /api/v1/db/connections/summary`
-- `GET /api/v1/system/metrics`
 - `GET /api/v1/dashboard/summary`
+- `GET /api/v1/system/metrics`
+- `GET /api/v1/history/summary`
+
+### Database
+
+- `GET /api/v1/db/locks`
+- `GET /api/v1/db/locks/blocking`
+- `GET /api/v1/db/locks/blocked`
+- `GET /api/v1/db/queries/top?limit=20`
+- `GET /api/v1/db/queries/slow?limit=20`
+- `GET /api/v1/db/queries/running?minDurationSeconds=30`
+- `GET /api/v1/db/connections/summary`
 - `GET /api/v1/db/cache/hit-ratio`
+- `POST /api/v1/db/sessions/{pid}/terminate`
+
+### Intelligence
+
+- `GET /api/v1/db/intelligence/overview`
+- `GET /api/v1/db/intelligence/score`
+- `GET /api/v1/db/intelligence/alerts`
+- `GET /api/v1/db/intelligence/anomalies`
+- `GET /api/v1/db/intelligence/recommendations`
 
 ## Swagger
 

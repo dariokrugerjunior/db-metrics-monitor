@@ -1,22 +1,31 @@
 # db-metrics-monitor
 
-Monorepo com backend Spring Boot e frontend React/Vite para observabilidade operacional de PostgreSQL.
+Monorepo para observabilidade operacional de PostgreSQL com:
+
+- `backend`: API REST em Java 21 + Spring Boot 3
+- `frontend`: interface React + Vite para monitoramento e intelligence operacional
 
 ## Estrutura
 
 ```text
 .
 |-- backend
-|   |-- Dockerfile
-|   |-- pom.xml
-|   |-- postgres-monitoring-queries.sql
-|   |-- requests.http
-|   `-- src
 |-- frontend
-|   |-- package.json
-|   `-- src
-`-- docker-compose.yml
+|-- data
+|-- docker-compose.yml
+`-- README.md
 ```
+
+## Principais recursos
+
+- monitoramento de conexoes, locks, queries, cache hit ratio, CPU e memoria
+- historico de incidentes persistido em SQLite
+- camada de intelligence operacional com:
+  - score automatico de saude
+  - alertas inteligentes
+  - deteccao de anomalias por baseline historica
+  - recomendacoes automaticas baseadas em correlacao de sinais
+- tela web consolidada para `overview`, `locks`, `queries`, `connections`, `history`, `ai-analysis` e `intelligence`
 
 ## Executar localmente
 
@@ -33,7 +42,6 @@ mvn spring-boot:run
 
 ```powershell
 cd frontend
-Copy-Item .env.example .env
 npm install
 npm run dev
 ```
@@ -43,6 +51,19 @@ npm run dev
 ```powershell
 docker compose up --build
 ```
+
+## Endpoints de destaque
+
+- `GET /api/v1/dashboard/summary`
+- `GET /api/v1/db/connections/summary`
+- `GET /api/v1/db/locks`
+- `GET /api/v1/db/queries/top`
+- `GET /api/v1/history/summary`
+- `GET /api/v1/db/intelligence/overview`
+- `GET /api/v1/db/intelligence/score`
+- `GET /api/v1/db/intelligence/alerts`
+- `GET /api/v1/db/intelligence/anomalies`
+- `GET /api/v1/db/intelligence/recommendations`
 
 ## Documentacao
 
