@@ -2,6 +2,7 @@ import type {
   AiAnalysisHistoryResponse,
   AiAnalysisRequest,
   AiAnalysisResponse,
+  DatabaseIntelligenceOverviewResponse,
   ConnectionSummaryResponse,
   DashboardSummaryResponse,
   HistoricalIncidentResponse,
@@ -94,6 +95,8 @@ export const api = {
   getAiAnalysisHistory: (limit = 100) =>
     request<AiAnalysisHistoryResponse[]>("/ai/history", { params: { limit } }),
   getSystemMetrics: () => request<SystemMetricsResponse>("/system/metrics"),
+  getDbIntelligenceOverview: () =>
+    request<DatabaseIntelligenceOverviewResponse>("/db/intelligence/overview"),
   terminateSession: (pid: number, reason = "Terminated from frontend dashboard") =>
     request<TerminateSessionResponse>(`/db/sessions/${pid}/terminate`, {
       method: "POST",

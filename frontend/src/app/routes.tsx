@@ -7,6 +7,7 @@ import { Connections } from "./pages/Connections";
 import { Overview } from "./pages/Overview";
 import { History } from "./pages/History";
 import { AiAnalysis } from "./pages/AiAnalysis";
+import { Intelligence } from "./pages/Intelligence";
 
 export const router = createBrowserRouter([
   {
@@ -18,6 +19,7 @@ export const router = createBrowserRouter([
       { path: "queries", Component: Queries },
       { path: "connections", Component: Connections },
       { path: "overview", Component: Overview },
+      { path: "intelligence", Component: Intelligence },
       { path: "history", Component: History },
       { path: "ai-analysis", Component: AiAnalysis },
     ],

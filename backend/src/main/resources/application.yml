@@ -64,3 +64,59 @@ app:
     model: ${APP_OPENAI_MODEL:gpt-5-mini}
     api-key: ${APP_OPENAI_API_KEY:}
     max-output-tokens: ${APP_OPENAI_MAX_OUTPUT_TOKENS:900}
+
+db:
+  intelligence:
+    environment: ${DB_INTELLIGENCE_ENVIRONMENT:default}
+    score:
+      healthy-min-score: ${DB_INTELLIGENCE_SCORE_HEALTHY_MIN:80}
+      warning-min-score: ${DB_INTELLIGENCE_SCORE_WARNING_MIN:50}
+      recurring-incident-threshold: ${DB_INTELLIGENCE_SCORE_RECURRING_INCIDENT_THRESHOLD:5}
+      recurring-lock-incident-threshold: ${DB_INTELLIGENCE_SCORE_RECURRING_LOCK_THRESHOLD:3}
+      long-query-warning-seconds: ${DB_INTELLIGENCE_SCORE_LONG_QUERY_WARNING_SECONDS:10}
+      long-query-critical-seconds: ${DB_INTELLIGENCE_SCORE_LONG_QUERY_CRITICAL_SECONDS:60}
+      penalties:
+        blocked-locks: ${DB_INTELLIGENCE_SCORE_BLOCKED_LOCKS_PENALTY:25}
+        blocking-locks: ${DB_INTELLIGENCE_SCORE_BLOCKING_LOCKS_PENALTY:15}
+        idle-in-transaction: ${DB_INTELLIGENCE_SCORE_IDLE_IN_TRANSACTION_PENALTY:10}
+        idle-in-transaction-critical: ${DB_INTELLIGENCE_SCORE_IDLE_IN_TRANSACTION_CRITICAL_PENALTY:20}
+        high-connection-usage: ${DB_INTELLIGENCE_SCORE_HIGH_CONNECTION_USAGE_PENALTY:10}
+        critical-connection-usage: ${DB_INTELLIGENCE_SCORE_CRITICAL_CONNECTION_USAGE_PENALTY:20}
+        long-running-query: ${DB_INTELLIGENCE_SCORE_LONG_QUERY_PENALTY:10}
+        critical-long-running-query: ${DB_INTELLIGENCE_SCORE_CRITICAL_LONG_QUERY_PENALTY:20}
+        low-cache-hit: ${DB_INTELLIGENCE_SCORE_LOW_CACHE_HIT_PENALTY:5}
+        critical-cache-hit: ${DB_INTELLIGENCE_SCORE_CRITICAL_CACHE_HIT_PENALTY:15}
+        high-cpu: ${DB_INTELLIGENCE_SCORE_HIGH_CPU_PENALTY:10}
+        critical-cpu: ${DB_INTELLIGENCE_SCORE_CRITICAL_CPU_PENALTY:20}
+        high-memory: ${DB_INTELLIGENCE_SCORE_HIGH_MEMORY_PENALTY:10}
+        recurring-incidents: ${DB_INTELLIGENCE_SCORE_RECURRING_INCIDENTS_PENALTY:10}
+        recurring-lock-incidents: ${DB_INTELLIGENCE_SCORE_RECURRING_LOCK_INCIDENTS_PENALTY:10}
+    alerts:
+      connection-warning-percent: ${DB_INTELLIGENCE_ALERT_CONNECTION_WARNING_PERCENT:70}
+      connection-critical-percent: ${DB_INTELLIGENCE_ALERT_CONNECTION_CRITICAL_PERCENT:85}
+      cpu-warning-percent: ${DB_INTELLIGENCE_ALERT_CPU_WARNING_PERCENT:80}
+      cpu-critical-percent: ${DB_INTELLIGENCE_ALERT_CPU_CRITICAL_PERCENT:90}
+      memory-warning-percent: ${DB_INTELLIGENCE_ALERT_MEMORY_WARNING_PERCENT:80}
+      memory-critical-percent: ${DB_INTELLIGENCE_ALERT_MEMORY_CRITICAL_PERCENT:90}
+      cache-warning-percent: ${DB_INTELLIGENCE_ALERT_CACHE_WARNING_PERCENT:99}
+      cache-critical-percent: ${DB_INTELLIGENCE_ALERT_CACHE_CRITICAL_PERCENT:97}
+      long-query-warning-seconds: ${DB_INTELLIGENCE_ALERT_LONG_QUERY_WARNING_SECONDS:60}
+      long-query-critical-seconds: ${DB_INTELLIGENCE_ALERT_LONG_QUERY_CRITICAL_SECONDS:300}
+      idle-in-transaction-warning-count: ${DB_INTELLIGENCE_ALERT_IDLE_IN_TX_WARNING_COUNT:1}
+      recurring-incident-threshold: ${DB_INTELLIGENCE_ALERT_RECURRING_INCIDENT_THRESHOLD:5}
+      recurring-lock-incident-threshold: ${DB_INTELLIGENCE_ALERT_RECURRING_LOCK_THRESHOLD:3}
+    anomaly:
+      baseline-window-minutes: ${DB_INTELLIGENCE_ANOMALY_WINDOW_MINUTES:120}
+      minimum-samples: ${DB_INTELLIGENCE_ANOMALY_MIN_SAMPLES:6}
+      total-connections-percent-threshold: ${DB_INTELLIGENCE_ANOMALY_TOTAL_CONNECTIONS_THRESHOLD:40}
+      connection-active-percent-threshold: ${DB_INTELLIGENCE_ANOMALY_ACTIVE_CONNECTIONS_THRESHOLD:50}
+      idle-in-transaction-percent-threshold: ${DB_INTELLIGENCE_ANOMALY_IDLE_IN_TX_THRESHOLD:50}
+      blocked-locks-percent-threshold: ${DB_INTELLIGENCE_ANOMALY_BLOCKED_LOCKS_THRESHOLD:100}
+      running-queries-percent-threshold: ${DB_INTELLIGENCE_ANOMALY_RUNNING_QUERIES_THRESHOLD:50}
+      long-running-queries-percent-threshold: ${DB_INTELLIGENCE_ANOMALY_LONG_RUNNING_QUERIES_THRESHOLD:50}
+      cache-hit-drop-threshold: ${DB_INTELLIGENCE_ANOMALY_CACHE_DROP_THRESHOLD:2}
+      cpu-percent-threshold: ${DB_INTELLIGENCE_ANOMALY_CPU_THRESHOLD:30}
+      memory-percent-threshold: ${DB_INTELLIGENCE_ANOMALY_MEMORY_THRESHOLD:25}
+    recommendation:
+      lock-incident-recurrence-threshold: ${DB_INTELLIGENCE_RECOMMENDATION_LOCK_RECURRENCE_THRESHOLD:3}
+      top-query-total-exec-time-threshold: ${DB_INTELLIGENCE_RECOMMENDATION_TOP_QUERY_TOTAL_EXEC_THRESHOLD:10000}

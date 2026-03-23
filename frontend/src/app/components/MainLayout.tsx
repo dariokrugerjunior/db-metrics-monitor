@@ -5,6 +5,7 @@ import {
   Code2, 
   Cable, 
   BarChart3,
+  BrainCircuit,
   Bot,
   History as HistoryIcon,
   Database,
@@ -16,6 +17,7 @@ import { RefreshButton } from "./RefreshButton";
 
 const navigation = [
   { name: "Overview", href: "/overview", icon: BarChart3 },
+  { name: "Intelligence", href: "/intelligence", icon: BrainCircuit },
   { name: "Locks", href: "/locks", icon: Lock },
   { name: "Queries", href: "/queries", icon: Code2 },
   { name: "Connections", href: "/connections", icon: Cable },
