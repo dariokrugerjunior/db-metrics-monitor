@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { MetricCard } from "../components/MetricCard";
 import { DataTable, Column } from "../components/DataTable";
 import { StatusBadge } from "../components/StatusBadge";
@@ -83,6 +84,7 @@ function getLockStatus(index: number): LockRow["status"] {
 }
 
 export function Dashboard() {
+  const { t } = useTranslation();
   const { data, loading, error, refresh } = useApiPolling(api.getDashboardSummary, {
     initialData: emptySummary,
     intervalMs: 15000,
@@ -120,45 +122,45 @@ export function Dashboard() {
   const queryColumns: Column<QueryRow>[] = [
     {
       key: "query",
-      header: "Query",
+      header: t("common.query"),
       render: (row) => <span className="font-mono text-xs text-[#a1a1aa]">{row.query}</span>,
     },
     {
       key: "calls",
-      header: "Execuções",
+      header: t("dashboard.executions"),
       sortable: true,
       render: (row) => formatCompactNumber(row.calls),
     },
     {
       key: "meanExecTime",
-      header: "Tempo Médio",
+      header: t("dashboard.avgTime"),
       sortable: true,
       render: (row) => `${row.meanExecTime.toFixed(2)}ms`,
     },
     {
       key: "status",
-      header: "Status",
+      header: t("common.status"),
       render: (row) => <StatusBadge status={row.status} />,
     },
   ];
 
   const lockColumns: Column<LockRow>[] = [
     { key: "pid", header: "PID", sortable: true },
-    { key: "database", header: "Database" },
+    { key: "database", header: t("common.database") },
     {
       key: "state",
-      header: "State",
+      header: t("dashboard.state"),
       render: (row) => <span className="capitalize">{row.state ?? "unknown"}</span>,
     },
     {
       key: "duration",
-      header: "Duração",
+      header: t("dashboard.duration"),
       sortable: true,
       render: (row) => formatDuration(row.duration),
     },
     {
       key: "status",
-      header: "Status",
+      header: t("common.status"),
       render: (row) => <StatusBadge status={row.status} />,
     },
   ];
@@ -167,7 +169,7 @@ export function Dashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-[#71717a]">Snapshot operacional do backend Spring</p>
+          <p className="text-sm text-[#71717a]">{t("dashboard.springSnapshot")}</p>
         </div>
         <TimeRangeFilter />
       </div>
@@ -175,7 +177,7 @@ export function Dashboard() {
       {error && (
         <StatusBanner
           status="error"
-          title="Falha ao carregar o dashboard"
+          title={t("dashboard.errorBanner")}
           description={error}
         />
       )}
@@ -201,49 +203,49 @@ export function Dashboard() {
         <>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             <MetricCard
-              title="Total Connections"
+              title={t("dashboard.totalConnections")}
               value={data.database.connections.totalConnections}
-              change={`${formatPercent(data.database.connections.usagePercent)} da capacidade`}
+              change={t("dashboard.capacityUsage", { percent: formatPercent(data.database.connections.usagePercent) })}
               changeType="neutral"
               icon={Cable}
               status="healthy"
             />
             <MetricCard
-              title="Active Connections"
+              title={t("dashboard.activeConnections")}
               value={data.database.connections.activeConnections}
-              change={`${data.database.connections.idleConnections} idle`}
+              change={t("dashboard.idleConnections", { count: data.database.connections.idleConnections })}
               changeType="positive"
               icon={Activity}
               status="healthy"
             />
             <MetricCard
-              title="Active Locks"
+              title={t("dashboard.activeLocks")}
               value={data.database.locks.total}
-              change={`${data.database.locks.blocked} blocked`}
+              change={t("dashboard.blockedCount", { count: data.database.locks.blocked })}
               changeType={data.database.locks.blocked > 0 ? "negative" : "positive"}
               icon={Lock}
               status={data.database.locks.blocked > 0 ? "warning" : "healthy"}
             />
             <MetricCard
-              title="Running Queries"
+              title={t("dashboard.runningQueries")}
               value={data.database.runningQueries.total}
-              change={`${recentLocks.length} visíveis no snapshot`}
+              change={t("dashboard.visibleSnapshot", { count: recentLocks.length })}
               changeType="neutral"
               icon={Code2}
               status="healthy"
             />
             <MetricCard
-              title="CPU Usage"
+              title={t("dashboard.cpuUsage")}
               value={formatPercent(cpuPercent)}
-              change={`${data.application.cpu.availableProcessors} vCPUs`}
+              change={t("dashboard.vcpus", { count: data.application.cpu.availableProcessors })}
               changeType={cpuPercent >= 70 ? "negative" : "positive"}
               icon={Cpu}
               status={cpuPercent >= 80 ? "critical" : cpuPercent >= 60 ? "warning" : "healthy"}
             />
             <MetricCard
-              title="Memory Usage"
+              title={t("dashboard.memoryUsage")}
               value={formatPercent(memoryPercent)}
-              change={`${formatPercent(memoryPercent)} do heap JVM`}
+              change={t("dashboard.heapUsage", { percent: formatPercent(memoryPercent) })}
               changeType={memoryPercent >= 75 ? "warning" : "positive"}
               icon={MemoryStick}
               status={memoryPercent >= 85 ? "critical" : memoryPercent >= 70 ? "warning" : "healthy"}
@@ -251,19 +253,19 @@ export function Dashboard() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <ChartCard title="CPU Usage %" data={cpuData} color="#3b82f6" />
-            <ChartCard title="Heap Usage %" data={memoryData} color="#8b5cf6" />
-            <ChartCard title="Connections" data={connectionsData} color="#10b981" />
+            <ChartCard title={t("dashboard.cpuChart")} data={cpuData} color="#3b82f6" />
+            <ChartCard title={t("dashboard.heapChart")} data={memoryData} color="#8b5cf6" />
+            <ChartCard title={t("dashboard.connectionsChart")} data={connectionsData} color="#10b981" />
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div>
-              <h2 className="mb-3 text-lg font-semibold text-white">Top Queries</h2>
-              <DataTable data={topQueries} columns={queryColumns} emptyMessage="Nenhuma query disponível" />
+              <h2 className="mb-3 text-lg font-semibold text-white">{t("dashboard.topQueries")}</h2>
+              <DataTable data={topQueries} columns={queryColumns} emptyMessage={t("dashboard.noQueriesAvailable")} />
             </div>
             <div>
-              <h2 className="mb-3 text-lg font-semibold text-white">Running Queries</h2>
-              <DataTable data={recentLocks} columns={lockColumns} emptyMessage="Nenhuma query em execução" />
+              <h2 className="mb-3 text-lg font-semibold text-white">{t("dashboard.runningQueriesSection")}</h2>
+              <DataTable data={recentLocks} columns={lockColumns} emptyMessage={t("dashboard.noRunningQueries")} />
             </div>
           </div>
         </>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Bot, Eye, MessageSquareText, Send, ShieldAlert, Trash2 } from "lucide-react";
 import { DataTable, Column } from "../components/DataTable";
 import { StatusBanner } from "../components/StatusBanner";
@@ -27,6 +28,7 @@ import { formatRelativeTimestamp } from "../lib/formatters";
 import { usePageRefresh } from "../hooks/usePageRefresh";
 
 export function AiAnalysis() {
+  const { t } = useTranslation();
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,9 +43,9 @@ export function AiAnalysis() {
       const rows = await api.getAiAnalysisHistory(100);
       setHistory(rows);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao carregar historico de IA.");
+      setError(err instanceof Error ? err.message : t("aiAnalysis.loadHistoryError"));
     }
-  }, []);
+  }, [t]);
 
   const sendToAi = useCallback(async () => {
     setLoading(true);
@@ -53,11 +55,11 @@ export function AiAnalysis() {
       setAnalysis(response);
       await loadHistory();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao analisar com IA.");
+      setError(err instanceof Error ? err.message : t("aiAnalysis.analyzeError"));
     } finally {
       setLoading(false);
     }
-  }, [loadHistory, prompt]);
+  }, [loadHistory, prompt, t]);
 
   const clearHistory = useCallback(async () => {
     setClearingHistory(true);
@@ -68,11 +70,11 @@ export function AiAnalysis() {
       setSelectedHistory(null);
       setClearDialogOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao limpar historico de IA.");
+      setError(err instanceof Error ? err.message : t("aiAnalysis.clearHistoryError"));
     } finally {
       setClearingHistory(false);
     }
-  }, []);
+  }, [t]);
 
   usePageRefresh(
     useCallback(() => {
@@ -87,27 +89,27 @@ export function AiAnalysis() {
   const historyColumns: Column<AiAnalysisHistoryResponse>[] = [
     {
       key: "createdAt",
-      header: "Momento",
+      header: t("aiAnalysis.moment"),
       sortable: true,
       render: (row) => formatRelativeTimestamp(row.createdAt),
     },
     {
       key: "model",
-      header: "Modelo",
+      header: t("aiAnalysis.model"),
       sortable: true,
     },
     {
       key: "userPrompt",
-      header: "Mensagem",
+      header: t("aiAnalysis.message"),
       render: (row) => (
         <span className="block max-w-md truncate text-sm text-[#a1a1aa]">
-          {row.userPrompt || "Sem prompt complementar"}
+          {row.userPrompt || t("aiAnalysis.noPrompt")}
         </span>
       ),
     },
     {
       key: "actions",
-      header: "Detalhes",
+      header: t("aiAnalysis.details"),
       render: (row) => (
         <Button
           type="button"
@@ -117,7 +119,7 @@ export function AiAnalysis() {
           className="text-[#3b82f6] hover:bg-[#3b82f6]/10 hover:text-[#3b82f6]"
         >
           <Eye className="mr-2 h-4 w-4" />
-          Ver informacoes
+          {t("aiAnalysis.viewInfo")}
         </Button>
       ),
     },
@@ -133,15 +135,15 @@ export function AiAnalysis() {
                 <Bot className="h-6 w-6 text-[#3b82f6]" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-white">Analise IA</h2>
+                <h2 className="text-xl font-semibold text-white">{t("aiAnalysis.title")}</h2>
                 <p className="text-sm text-[#a1a1aa]">
-                  Envia o snapshot atual do banco para a OpenAI e retorna um parecer operacional em portugues.
+                  {t("aiAnalysis.description")}
                 </p>
               </div>
             </div>
           </div>
           <div className="rounded-lg border border-[#f59e0b]/30 bg-[#f59e0b]/10 px-4 py-3 text-sm text-[#f59e0b]">
-            O historico exibido abaixo e filtrado pelo DB_URL_ADMIN atual.
+            {t("aiAnalysis.dbNotice")}
           </div>
         </div>
       </div>
@@ -149,27 +151,27 @@ export function AiAnalysis() {
       {loading && (
         <StatusBanner
           status="info"
-          title="Analise em andamento"
-          description="Se ja existir outra analise rodando para este banco, esta requisicao vai aguardar a anterior terminar antes de iniciar."
+          title={t("aiAnalysis.analyzingBanner")}
+          description={t("aiAnalysis.analyzingDesc")}
         />
       )}
 
-      {error && <StatusBanner status="error" title="Falha ao consultar a IA" description={error} />}
+      {error && <StatusBanner status="error" title={t("aiAnalysis.errorBanner")} description={error} />}
 
       <div className="rounded-lg border border-[#27272a] bg-[#111116] p-5">
         <div className="mb-4 flex items-center gap-3">
           <MessageSquareText className="h-5 w-5 text-[#3b82f6]" />
-          <h3 className="text-lg font-semibold text-white">Prompt complementar</h3>
+          <h3 className="text-lg font-semibold text-white">{t("aiAnalysis.promptLabel")}</h3>
         </div>
         <Textarea
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
-          placeholder="Ex.: verifique se existe risco de saturacao por conexoes, locks ou queries lentas."
+          placeholder={t("aiAnalysis.promptPlaceholder")}
           className="min-h-36 border-[#27272a] bg-[#0a0a0f] text-white"
         />
         <div className="mt-4 flex items-center justify-between">
           <p className="text-sm text-[#71717a]">
-            Se voce deixar vazio, a IA usa apenas o contexto operacional coletado pelo backend.
+            {t("aiAnalysis.promptHint")}
           </p>
           <Button
             type="button"
@@ -178,43 +180,43 @@ export function AiAnalysis() {
             className="bg-[#3b82f6] text-white hover:bg-[#2563eb]"
           >
             <Send className="mr-2 h-4 w-4" />
-            {loading ? "Enviando..." : "Enviar para IA"}
+            {loading ? t("aiAnalysis.sending") : t("aiAnalysis.sendButton")}
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <InsightCard
-          title="Fonte"
-          value="OpenAI API"
-          description="Analise baseada no snapshot atual do banco e historico local."
+          title={t("aiAnalysis.sourceCard")}
+          value={t("aiAnalysis.sourceValue")}
+          description={t("aiAnalysis.sourceDesc")}
           icon={<Bot className="h-5 w-5 text-[#3b82f6]" />}
         />
         <InsightCard
-          title="Modelo"
-          value={analysis?.model ?? "Aguardando"}
-          description="Modelo configurado no backend via APP_OPENAI_MODEL."
+          title={t("aiAnalysis.modelCard")}
+          value={analysis?.model ?? t("aiAnalysis.modelPending")}
+          description={t("aiAnalysis.modelDesc")}
           icon={<MessageSquareText className="h-5 w-5 text-[#10b981]" />}
         />
         <InsightCard
-          title="Ultima analise"
-          value={analysis ? formatRelativeTimestamp(analysis.generatedAt) : "N/A"}
-          description="Resultado mais recente gerado pela integracao."
+          title={t("aiAnalysis.lastAnalysisCard")}
+          value={analysis ? formatRelativeTimestamp(analysis.generatedAt) : t("common.na")}
+          description={t("aiAnalysis.lastAnalysisDesc")}
           icon={<ShieldAlert className="h-5 w-5 text-[#f59e0b]" />}
         />
       </div>
 
       <div className="rounded-lg border border-[#27272a] bg-[#111116] p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-white">Resposta da IA</h3>
+          <h3 className="text-lg font-semibold text-white">{t("aiAnalysis.responseTitle")}</h3>
           <span className="text-xs text-[#71717a]">
-            {error ? "Erro" : analysis ? "Atualizado" : "Ainda nao executado"}
+            {error ? t("aiAnalysis.statusError") : analysis ? t("aiAnalysis.statusUpdated") : t("aiAnalysis.statusPending")}
           </span>
         </div>
 
         {error ? (
           <div className="rounded-lg border border-[#ef4444]/30 bg-[#ef4444]/10 p-4">
-            <p className="text-sm font-medium text-[#ef4444]">Nao foi possivel obter a resposta da IA.</p>
+            <p className="text-sm font-medium text-[#ef4444]">{t("aiAnalysis.responseError")}</p>
             <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-[#f5b4b4]">{error}</p>
           </div>
         ) : analysis ? (
@@ -224,7 +226,7 @@ export function AiAnalysis() {
             </div>
             {analysis.prompt && (
               <div>
-                <p className="mb-2 text-xs uppercase tracking-wide text-[#71717a]">Prompt complementar enviado</p>
+                <p className="mb-2 text-xs uppercase tracking-wide text-[#71717a]">{t("aiAnalysis.promptSent")}</p>
                 <div className="rounded-lg border border-[#27272a] bg-[#0a0a0f] p-4 text-sm text-[#a1a1aa]">
                   {analysis.prompt}
                 </div>
@@ -233,16 +235,16 @@ export function AiAnalysis() {
           </div>
         ) : (
           <div className="rounded-lg border border-dashed border-[#27272a] bg-[#0a0a0f] p-10 text-center text-[#71717a]">
-            Clique em <span className="text-white">Enviar para IA</span> para receber um parecer do estado atual do banco.
+            {t("aiAnalysis.clickToSend")}
           </div>
         )}
       </div>
 
       <div className="rounded-lg border border-[#27272a] bg-[#111116] p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-white">Historico de chats IA</h3>
+          <h3 className="text-lg font-semibold text-white">{t("aiAnalysis.historyTitle")}</h3>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-[#71717a]">Apenas do DB_URL_ADMIN atual</span>
+            <span className="text-xs text-[#71717a]">{t("aiAnalysis.historySubtitle")}</span>
             <Button
               type="button"
               variant="outline"
@@ -252,31 +254,33 @@ export function AiAnalysis() {
               className="border-[#ef4444]/30 text-[#fca5a5] hover:bg-[#ef4444]/10 hover:text-[#fecaca]"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              {clearingHistory ? "Limpando..." : "Limpar historico"}
+              {clearingHistory ? t("aiAnalysis.clearing") : t("aiAnalysis.clearHistory")}
             </Button>
           </div>
         </div>
         <DataTable
           data={history}
           columns={historyColumns}
-          emptyMessage="Nenhum chat IA salvo para este DB_URL_ADMIN"
+          emptyMessage={t("aiAnalysis.noHistory")}
         />
       </div>
 
       <Dialog open={!!selectedHistory} onOpenChange={() => setSelectedHistory(null)}>
         <DialogContent className="flex max-h-[85vh] max-w-4xl flex-col overflow-hidden border-[#27272a] bg-[#111116] text-white">
           <DialogHeader>
-            <DialogTitle>Detalhes do chat IA</DialogTitle>
+            <DialogTitle>{t("aiAnalysis.detailsTitle")}</DialogTitle>
             <DialogDescription className="text-[#a1a1aa]">
-              Historico salvo para o DB_URL_ADMIN atual em {selectedHistory ? formatRelativeTimestamp(selectedHistory.createdAt) : ""}
+              {t("aiAnalysis.detailsDesc", {
+                timestamp: selectedHistory ? formatRelativeTimestamp(selectedHistory.createdAt) : "",
+              })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto py-4 pr-2">
-            <DetailBlock title="DB_URL_ADMIN" content={selectedHistory?.dbUrlAdmin ?? ""} />
-            <DetailBlock title="Prompt complementar enviado" content={selectedHistory?.userPrompt || "Sem prompt complementar"} />
-            <DetailBlock title="Prompt final enviado para a OpenAI" content={selectedHistory?.finalPrompt ?? ""} mono />
-            <DetailBlock title="Resposta da IA" content={selectedHistory?.analysis ?? ""} />
+            <DetailBlock title={t("aiAnalysis.dbUrlBlock")} content={selectedHistory?.dbUrlAdmin ?? ""} />
+            <DetailBlock title={t("aiAnalysis.promptBlock")} content={selectedHistory?.userPrompt || t("aiAnalysis.noPrompt")} />
+            <DetailBlock title={t("aiAnalysis.finalPromptBlock")} content={selectedHistory?.finalPrompt ?? ""} mono />
+            <DetailBlock title={t("aiAnalysis.responseBlock")} content={selectedHistory?.analysis ?? ""} />
           </div>
         </DialogContent>
       </Dialog>
@@ -284,20 +288,20 @@ export function AiAnalysis() {
       <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
         <AlertDialogContent className="border-[#27272a] bg-[#111116] text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle>Limpar historico de IA</AlertDialogTitle>
+            <AlertDialogTitle>{t("aiAnalysis.clearDialogTitle")}</AlertDialogTitle>
             <AlertDialogDescription className="text-[#a1a1aa]">
-              Esta acao remove permanentemente todas as analises salvas para o DB_URL_ADMIN atual.
+              {t("aiAnalysis.clearDialogDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="border-[#27272a] bg-[#0a0a0f] text-white hover:bg-[#1f1f28]">
-              Cancelar
+              {t("common.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => void clearHistory()}
               className="bg-[#ef4444] text-white hover:bg-[#dc2626]"
             >
-              Apagar historico
+              {t("aiAnalysis.deleteHistory")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

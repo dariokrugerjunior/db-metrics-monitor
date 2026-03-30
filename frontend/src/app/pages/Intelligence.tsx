@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
   BrainCircuit,
@@ -39,6 +40,7 @@ const emptyOverview: DatabaseIntelligenceOverviewResponse = {
 };
 
 export function Intelligence() {
+  const { t } = useTranslation();
   const { data, loading, error, refresh } = useApiPolling(api.getDbIntelligenceOverview, {
     initialData: emptyOverview,
     intervalMs: 15000,
@@ -55,50 +57,52 @@ export function Intelligence() {
 
   return (
     <div className="space-y-6">
-      {error && <StatusBanner status="error" title="Falha ao carregar intelligence" description={error} />}
+      {error && <StatusBanner status="error" title={t("intelligence.errorBanner")} description={error} />}
 
       <div className="rounded-2xl border border-[#27272a] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_35%),linear-gradient(135deg,#111116_0%,#0a0a0f_100%)] p-6">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-3xl">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#3b82f6]/20 bg-[#3b82f6]/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-[#93c5fd]">
               <BrainCircuit className="h-3.5 w-3.5" />
-              Operational Intelligence
+              {t("intelligence.badge")}
             </div>
-            <h2 className="text-2xl font-semibold text-white">Visao analitica e acionavel do PostgreSQL</h2>
+            <h2 className="text-2xl font-semibold text-white">{t("intelligence.title")}</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-[#a1a1aa]">
-              Motor deterministico baseado em score, correlacao de sinais, baseline historica e recomendacoes operacionais.
+              {t("intelligence.description")}
             </p>
             <p className="mt-3 text-xs uppercase tracking-[0.16em] text-[#71717a]">
-              Gerado em {formatRelativeTimestamp(data.generatedAt)}
+              {t("intelligence.generatedAt", { timestamp: formatRelativeTimestamp(data.generatedAt) })}
             </p>
           </div>
 
           <div className="flex flex-col items-start gap-3 rounded-2xl border border-[#27272a] bg-[#0a0a0f]/80 p-5">
             <HealthIndicator status={healthStatus} size="lg" />
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-[#71717a]">Health Score</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-[#71717a]">{t("intelligence.healthScore")}</p>
               <p className="mt-1 text-5xl font-semibold text-white">{formatNumber(data.score.score)}</p>
             </div>
-            <p className="max-w-sm text-sm leading-6 text-[#a1a1aa]">{data.score.summary || "Aguardando consolidacao do snapshot."}</p>
+            <p className="max-w-sm text-sm leading-6 text-[#a1a1aa]">
+              {data.score.summary || t("intelligence.awaitingSnapshot")}
+            </p>
           </div>
         </div>
       </div>
 
       <StatusBanner
         status={loading ? "info" : mapBannerStatus(data.score.classification)}
-        title={loading ? "Calculando intelligence operacional" : bannerTitle(data)}
+        title={loading ? t("intelligence.loadingTitle") : bannerTitle(data, t)}
         description={
           loading
-            ? "Carregando score, alertas, anomalias e recomendacoes do ambiente."
+            ? t("intelligence.loadingDesc")
             : highestAlert
               ? `${highestAlert.title}: ${highestAlert.description}`
-              : "Nenhum alerta critico ativo no snapshot atual."
+              : t("intelligence.noAlertActive")
         }
       />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          title="Score de Saude"
+          title={t("intelligence.scoreDeHealth")}
           value={data.score.score}
           change={data.score.classification}
           changeType={healthStatus === "healthy" ? "positive" : "negative"}
@@ -106,15 +110,15 @@ export function Intelligence() {
           status={healthStatus}
         />
         <MetricCard
-          title="Alertas Ativos"
+          title={t("intelligence.alertsAtivos")}
           value={data.alerts.length}
-          change={summarizeAlertMix(data.alerts)}
+          change={summarizeAlertMix(data.alerts, t)}
           changeType={data.alerts.some((item) => item.severity === "CRITICAL") ? "negative" : "neutral"}
           icon={AlertTriangle}
           status={data.alerts.some((item) => item.severity === "CRITICAL") ? "critical" : data.alerts.length > 0 ? "warning" : "healthy"}
         />
         <MetricCard
-          title="Anomalias"
+          title={t("intelligence.anomalias")}
           value={data.anomalies.length}
           change={data.anomalyMessage}
           changeType={data.anomalies.length > 0 ? "negative" : "neutral"}
@@ -122,9 +126,9 @@ export function Intelligence() {
           status={data.anomalies.some((item) => item.severity === "CRITICAL") ? "critical" : data.anomalies.length > 0 ? "warning" : "healthy"}
         />
         <MetricCard
-          title="Recomendacoes"
+          title={t("intelligence.recomendacoes")}
           value={data.recommendations.length}
-          change={summarizePriorityMix(data.recommendations)}
+          change={summarizePriorityMix(data.recommendations, t)}
           changeType={data.recommendations.some((item) => item.priority === "URGENT") ? "negative" : "neutral"}
           icon={Sparkles}
           status={data.recommendations.some((item) => item.priority === "URGENT") ? "critical" : data.recommendations.length > 0 ? "warning" : "healthy"}
@@ -139,8 +143,8 @@ export function Intelligence() {
                 <ShieldCheck className="h-5 w-5 text-[#3b82f6]" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">Score Breakdown</h3>
-                <p className="text-sm text-[#71717a]">Pontuacao por dominio operacional.</p>
+                <h3 className="text-lg font-semibold text-white">{t("intelligence.scoreBreakdown")}</h3>
+                <p className="text-sm text-[#71717a]">{t("intelligence.scoreByDomain")}</p>
               </div>
             </div>
             <StatusBadge status={healthStatus} label={data.score.classification} />
@@ -156,14 +160,16 @@ export function Intelligence() {
         <section className="rounded-xl border border-[#27272a] bg-[#111116] p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-white">Penalidades Aplicadas</h3>
-              <p className="text-sm text-[#71717a]">Sinais que derrubaram o score neste snapshot.</p>
+              <h3 className="text-lg font-semibold text-white">{t("intelligence.penaltiesTitle")}</h3>
+              <p className="text-sm text-[#71717a]">{t("intelligence.penaltiesDesc")}</p>
             </div>
-            <span className="text-xs uppercase tracking-[0.16em] text-[#71717a]">{data.score.penalties.length} itens</span>
+            <span className="text-xs uppercase tracking-[0.16em] text-[#71717a]">
+              {t("intelligence.items", { count: data.score.penalties.length })}
+            </span>
           </div>
 
           {data.score.penalties.length === 0 ? (
-            <EmptyBlock message="Nenhuma penalidade aplicada no momento." />
+            <EmptyBlock message={t("intelligence.noPenalties")} />
           ) : (
             <div className="space-y-3">
               {data.score.penalties.map((penalty) => (
@@ -171,7 +177,7 @@ export function Intelligence() {
                   <div className="flex items-center justify-between gap-4">
                     <p className="text-sm font-medium text-white">{penalty.code}</p>
                     <span className="rounded-full bg-[#ef4444]/10 px-2.5 py-1 text-xs font-medium text-[#ef4444]">
-                      -{penalty.points} pts
+                      -{penalty.points} {t("intelligence.pts")}
                     </span>
                   </div>
                   <p className="mt-2 text-sm leading-6 text-[#a1a1aa]">{penalty.message}</p>
@@ -183,9 +189,9 @@ export function Intelligence() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Panel title="Alertas Ativos" subtitle="Eventos acionaveis classificados por severidade.">
+        <Panel title={t("intelligence.alertsPanel")} subtitle={t("intelligence.alertsPanelDesc")}>
           {data.alerts.length === 0 ? (
-            <EmptyBlock message="Sem alertas ativos." />
+            <EmptyBlock message={t("intelligence.noAlerts")} />
           ) : (
             <div className="space-y-3">
               {data.alerts.map((alert) => (
@@ -195,7 +201,7 @@ export function Intelligence() {
           )}
         </Panel>
 
-        <Panel title="Anomalias" subtitle="Comparacao do snapshot atual com a baseline historica.">
+        <Panel title={t("intelligence.anomaliesPanel")} subtitle={t("intelligence.anomaliesPanelDesc")}>
           {!data.anomalies.length ? (
             <EmptyBlock message={data.anomalyMessage} />
           ) : (
@@ -207,9 +213,9 @@ export function Intelligence() {
           )}
         </Panel>
 
-        <Panel title="Recomendacoes" subtitle="Acoes sugeridas a partir da correlacao entre sinais.">
+        <Panel title={t("intelligence.recommendationsPanel")} subtitle={t("intelligence.recommendationsPanelDesc")}>
           {data.recommendations.length === 0 ? (
-            <EmptyBlock message="Nenhuma recomendacao emitida neste snapshot." />
+            <EmptyBlock message={t("intelligence.noRecommendations")} />
           ) : (
             <div className="space-y-3">
               {data.recommendations.map((recommendation) => (
@@ -244,6 +250,7 @@ function Panel({
 }
 
 function BreakdownCard({ item }: { item: ScoreBreakdownResponse }) {
+  const { t } = useTranslation();
   const status = item.penaltyPoints === 0 ? "healthy" : item.penaltyPoints >= 20 ? "critical" : "warning";
   const progressWidth = `${Math.max(6, item.score)}%`;
 
@@ -254,7 +261,7 @@ function BreakdownCard({ item }: { item: ScoreBreakdownResponse }) {
           <p className="text-xs uppercase tracking-[0.18em] text-[#71717a]">{item.category}</p>
           <p className="mt-2 text-2xl font-semibold text-white">{item.score}</p>
         </div>
-        <StatusBadge status={status} label={item.penaltyPoints === 0 ? "Estavel" : `-${item.penaltyPoints} pts`} />
+        <StatusBadge status={status} label={item.penaltyPoints === 0 ? t("intelligence.stable") : `-${item.penaltyPoints} ${t("intelligence.pts")}`} />
       </div>
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#1f1f28]">
         <div
@@ -264,7 +271,7 @@ function BreakdownCard({ item }: { item: ScoreBreakdownResponse }) {
       </div>
       <p className="mt-3 text-sm leading-6 text-[#71717a]">
         {item.penalties.length === 0
-          ? "Nenhuma penalidade detectada nesta categoria."
+          ? t("intelligence.noPenaltiesCategory")
           : item.penalties.map((penalty) => penalty.message).join(" ")}
       </p>
     </div>
@@ -272,6 +279,7 @@ function BreakdownCard({ item }: { item: ScoreBreakdownResponse }) {
 }
 
 function AlertRow({ alert }: { alert: AlertItemResponse }) {
+  const { t } = useTranslation();
   const status = mapSeverityBadge(alert.severity);
 
   return (
@@ -285,7 +293,7 @@ function AlertRow({ alert }: { alert: AlertItemResponse }) {
       </div>
       <p className="mt-3 text-sm leading-6 text-[#a1a1aa]">{alert.description}</p>
       <div className="mt-3 rounded-lg border border-[#27272a] bg-[#111116] p-3">
-        <p className="text-xs uppercase tracking-[0.16em] text-[#71717a]">Acao sugerida</p>
+        <p className="text-xs uppercase tracking-[0.16em] text-[#71717a]">{t("intelligence.suggestedAction")}</p>
         <p className="mt-1 text-sm leading-6 text-[#e4e4e7]">{alert.suggestedAction}</p>
       </div>
     </div>
@@ -293,6 +301,7 @@ function AlertRow({ alert }: { alert: AlertItemResponse }) {
 }
 
 function AnomalyRow({ anomaly }: { anomaly: AnomalyItemResponse }) {
+  const { t } = useTranslation();
   const status = mapSeverityBadge(anomaly.severity);
 
   return (
@@ -306,16 +315,17 @@ function AnomalyRow({ anomaly }: { anomaly: AnomalyItemResponse }) {
       </div>
       <p className="mt-3 text-sm leading-6 text-[#a1a1aa]">{anomaly.message}</p>
       <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-        <MiniMetric label="Atual" value={formatNumber(anomaly.baseline.currentValue)} />
-        <MiniMetric label="Media" value={formatNumber(Number(anomaly.baseline.average.toFixed(2)))} />
-        <MiniMetric label="Mediana" value={formatNumber(Number(anomaly.baseline.median.toFixed(2)))} />
-        <MiniMetric label="Desvio" value={formatPercent(anomaly.baseline.percentDeviation, 1)} />
+        <MiniMetric label={t("intelligence.current")} value={formatNumber(anomaly.baseline.currentValue)} />
+        <MiniMetric label={t("intelligence.average")} value={formatNumber(Number(anomaly.baseline.average.toFixed(2)))} />
+        <MiniMetric label={t("intelligence.median")} value={formatNumber(Number(anomaly.baseline.median.toFixed(2)))} />
+        <MiniMetric label={t("intelligence.deviation")} value={formatPercent(anomaly.baseline.percentDeviation, 1)} />
       </div>
     </div>
   );
 }
 
 function RecommendationRow({ recommendation }: { recommendation: RecommendationItemResponse }) {
+  const { t } = useTranslation();
   const status = mapPriorityBadge(recommendation.priority);
 
   return (
@@ -329,7 +339,7 @@ function RecommendationRow({ recommendation }: { recommendation: RecommendationI
       </div>
       <p className="mt-3 text-sm leading-6 text-[#a1a1aa]">{recommendation.description}</p>
       <div className="mt-3 rounded-lg border border-[#27272a] bg-[#111116] p-3">
-        <p className="text-xs uppercase tracking-[0.16em] text-[#71717a]">Rationale</p>
+        <p className="text-xs uppercase tracking-[0.16em] text-[#71717a]">{t("intelligence.rationale")}</p>
         <p className="mt-1 text-sm leading-6 text-[#e4e4e7]">{recommendation.rationale}</p>
       </div>
       <div className="mt-3 space-y-2">
@@ -396,28 +406,28 @@ function mapPriorityBadge(priority: string): "healthy" | "warning" | "critical" 
   return "info";
 }
 
-function summarizeAlertMix(alerts: AlertItemResponse[]) {
+function summarizeAlertMix(alerts: AlertItemResponse[], t: (key: string, opts?: object) => string) {
   const critical = alerts.filter((item) => item.severity === "CRITICAL").length;
   const warning = alerts.filter((item) => item.severity === "WARNING").length;
-  if (critical > 0) return `${critical} critico(s), ${warning} warning`;
-  if (warning > 0) return `${warning} warning(s)`;
-  return "Sem alertas relevantes";
+  if (critical > 0) return t("intelligence.criticalAlerts", { critical, warning });
+  if (warning > 0) return t("intelligence.warningAlerts", { warning });
+  return t("intelligence.noRelevantAlerts");
 }
 
-function summarizePriorityMix(recommendations: RecommendationItemResponse[]) {
+function summarizePriorityMix(recommendations: RecommendationItemResponse[], t: (key: string, opts?: object) => string) {
   const urgent = recommendations.filter((item) => item.priority === "URGENT").length;
   const high = recommendations.filter((item) => item.priority === "HIGH").length;
-  if (urgent > 0) return `${urgent} urgente(s), ${high} high`;
-  if (high > 0) return `${high} high priority`;
-  return "Sem recomendacoes pendentes";
+  if (urgent > 0) return t("intelligence.urgentRecommendations", { urgent, high });
+  if (high > 0) return t("intelligence.highPriority", { high });
+  return t("intelligence.noPendingRecommendations");
 }
 
-function bannerTitle(data: DatabaseIntelligenceOverviewResponse) {
+function bannerTitle(data: DatabaseIntelligenceOverviewResponse, t: (key: string) => string) {
   if (data.score.classification === "HEALTHY") {
-    return "Ambiente estavel no snapshot atual";
+    return t("intelligence.environmentStable");
   }
   if (data.score.classification === "WARNING") {
-    return "Ambiente com sinais de atencao operacional";
+    return t("intelligence.environmentWarning");
   }
-  return "Ambiente com risco operacional elevado";
+  return t("intelligence.environmentCritical");
 }

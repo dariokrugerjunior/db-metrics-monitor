@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { MetricCard } from "../components/MetricCard";
 import { DataTable, Column } from "../components/DataTable";
 import { StatusBanner } from "../components/StatusBanner";
@@ -36,6 +37,7 @@ const emptySummary: ConnectionSummaryResponse = {
 };
 
 export function Connections() {
+  const { t } = useTranslation();
   const { data, loading, error, refresh } = useApiPolling(api.getConnectionSummary, {
     initialData: emptySummary,
     intervalMs: 15000,
@@ -69,28 +71,28 @@ export function Connections() {
   }));
 
   const userColumns: Column<(typeof connectionsByUser)[number]>[] = [
-    { key: "user", header: "User", sortable: true },
-    { key: "count", header: "Total", sortable: true },
+    { key: "user", header: t("connections.user"), sortable: true },
+    { key: "count", header: t("connections.total"), sortable: true },
     {
       key: "active",
-      header: "Active",
+      header: t("connections.activeCol"),
       sortable: true,
       render: (row) => <span className="text-[#10b981]">{row.active}</span>,
     },
     {
       key: "idle",
-      header: "Idle",
+      header: t("connections.idleCol"),
       sortable: true,
       render: (row) => <span className="text-[#71717a]">{row.idle}</span>,
     },
   ];
 
   const appColumns: Column<(typeof connectionsByApp)[number]>[] = [
-    { key: "application", header: "Application", sortable: true },
-    { key: "count", header: "Connections", sortable: true },
+    { key: "application", header: t("connections.application"), sortable: true },
+    { key: "count", header: t("connections.connections"), sortable: true },
     {
       key: "percentage",
-      header: "Percentage",
+      header: t("connections.percentage"),
       sortable: true,
       render: (row) => `${row.percentage}%`,
     },
@@ -99,37 +101,37 @@ export function Connections() {
   return (
     <div className="space-y-6">
       {error && (
-        <StatusBanner status="error" title="Falha ao carregar conexões" description={error} />
+        <StatusBanner status="error" title={t("connections.errorBanner")} description={error} />
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          title="Total Connections"
+          title={t("connections.totalConnections")}
           value={data.totalConnections}
-          change={`${formatPercent(data.usagePercent)} da capacidade`}
+          change={t("connections.capacityUsage", { percent: formatPercent(data.usagePercent) })}
           changeType="neutral"
           icon={Cable}
           status="healthy"
         />
         <MetricCard
-          title="Active"
+          title={t("connections.active")}
           value={data.activeConnections}
-          change={`${data.byUser.length} usuários conectados`}
+          change={t("connections.usersConnected", { count: data.byUser.length })}
           changeType="positive"
           icon={Activity}
           status="healthy"
         />
         <MetricCard
-          title="Idle"
+          title={t("connections.idle")}
           value={data.idleConnections}
-          change="Snapshot atual"
+          change={t("connections.currentSnapshot")}
           changeType="neutral"
           icon={Pause}
         />
         <MetricCard
-          title="Idle in Transaction"
+          title={t("connections.idleInTransaction")}
           value={data.idleInTransactionConnections}
-          change="Monitorado pelo backend"
+          change={t("connections.monitoredByBackend")}
           changeType={data.idleInTransactionConnections > 0 ? "negative" : "positive"}
           icon={Clock}
           status={data.idleInTransactionConnections > 0 ? "warning" : "healthy"}
@@ -138,7 +140,7 @@ export function Connections() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-[#27272a] bg-[#111116] p-5">
-          <h3 className="mb-4 text-sm font-medium text-[#a1a1aa]">Connections Snapshot</h3>
+          <h3 className="mb-4 text-sm font-medium text-[#a1a1aa]">{t("connections.connectionsSnapshot")}</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={connectionsOverTime}>
               <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
@@ -161,7 +163,7 @@ export function Connections() {
         </div>
 
         <div className="rounded-lg border border-[#27272a] bg-[#111116] p-5">
-          <h3 className="mb-4 text-sm font-medium text-[#a1a1aa]">Distribution by Application</h3>
+          <h3 className="mb-4 text-sm font-medium text-[#a1a1aa]">{t("connections.distributionByApp")}</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -192,19 +194,19 @@ export function Connections() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div>
-          <h2 className="mb-3 text-lg font-semibold text-white">Connections by User</h2>
+          <h2 className="mb-3 text-lg font-semibold text-white">{t("connections.connectionsByUser")}</h2>
           <DataTable
             data={connectionsByUser}
             columns={userColumns}
-            emptyMessage={loading ? "Carregando conexões por usuário..." : "Nenhuma conexão por usuário"}
+            emptyMessage={loading ? t("connections.loadingByUser") : t("connections.noConnectionsByUser")}
           />
         </div>
         <div>
-          <h2 className="mb-3 text-lg font-semibold text-white">Connections by Application</h2>
+          <h2 className="mb-3 text-lg font-semibold text-white">{t("connections.connectionsByApp")}</h2>
           <DataTable
             data={connectionsByApp}
             columns={appColumns}
-            emptyMessage={loading ? "Carregando conexões por aplicação..." : "Nenhuma conexão por aplicação"}
+            emptyMessage={loading ? t("connections.loadingByApp") : t("connections.noConnectionsByApp")}
           />
         </div>
       </div>

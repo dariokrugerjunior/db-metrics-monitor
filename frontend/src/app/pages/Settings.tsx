@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   CheckCircle2,
   Database,
@@ -34,6 +35,7 @@ const defaultValues: SettingsForm = {
 };
 
 export function Settings() {
+  const { t } = useTranslation();
   const [form, setForm] = useState<SettingsForm>(defaultValues);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [activeDatasourceUrl, setActiveDatasourceUrl] = useState("");
@@ -60,14 +62,14 @@ export function Settings() {
         setActiveDatasourceUrl(response.activeDatasourceUrl);
         setRestartRequired(response.restartRequired);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Falha ao carregar configuracao.");
+        toast.error(error instanceof Error ? error.message : t("settings.loadError"));
       } finally {
         setLoading(false);
       }
     };
 
     void loadConfiguration();
-  }, []);
+  }, [t]);
 
   const completion = useMemo(() => {
     const requiredFields = [
@@ -99,7 +101,7 @@ export function Settings() {
     }
 
     if (tokenFieldInvalid) {
-      toast.error("APP_OPENAI_MAX_OUTPUT_TOKENS deve ser um inteiro positivo.");
+      toast.error(t("settings.tokenValidation"));
       return;
     }
 
@@ -120,12 +122,12 @@ export function Settings() {
         setRestartRequired(response.restartRequired);
         toast.success(
           response.restartRequired
-            ? "Configuracao salva. Reinicie o backend para aplicar o novo datasource."
-            : "Configuracao salva e aplicada ao runtime atual.",
+            ? t("settings.savedRestartRequired")
+            : t("settings.savedApplied"),
         );
       })
       .catch((error) => {
-        toast.error(error instanceof Error ? error.message : "Falha ao salvar configuracao.");
+        toast.error(error instanceof Error ? error.message : t("settings.saveError"));
       })
       .finally(() => {
         setSaving(false);
@@ -137,7 +139,7 @@ export function Settings() {
     setSavedAt(null);
     setConnectionTest(null);
     setRestartRequired(false);
-    toast.success("Formulario resetado. Use Salvar para persistir no backend.");
+    toast.success(t("settings.formReset"));
   };
 
   const handleTestConnection = () => {
@@ -156,13 +158,13 @@ export function Settings() {
       .then((response) => {
         setConnectionTest(response);
         if (response.success) {
-          toast.success("Conexao validada com sucesso.");
+          toast.success(t("settings.connectionValidated"));
           return;
         }
         toast.error(response.message);
       })
       .catch((error) => {
-        toast.error(error instanceof Error ? error.message : "Falha ao testar conexao.");
+        toast.error(error instanceof Error ? error.message : t("settings.testError"));
       })
       .finally(() => {
         setTesting(false);
@@ -187,40 +189,42 @@ export function Settings() {
                 <ServerCog className="h-6 w-6 text-[#93c5fd]" />
               </div>
               <div>
-                <h2 className="text-2xl font-semibold text-white">Configuracao do ambiente</h2>
+                <h2 className="text-2xl font-semibold text-white">{t("settings.title")}</h2>
                 <p className="text-sm text-[#cbd5e1]">
-                  Centralize os parametros do banco e da integracao OpenAI antes de subir o backend.
+                  {t("settings.description")}
                 </p>
               </div>
             </div>
 
             <div className="grid gap-3 text-sm text-[#a1a1aa] md:grid-cols-3">
-              <Highlight icon={<Database className="h-4 w-4 text-[#60a5fa]" />} label="Banco" value="DB_URL_ADMIN, DB_USER e DB_PASSWORD" />
-              <Highlight icon={<KeyRound className="h-4 w-4 text-[#34d399]" />} label="IA" value="APP_OPENAI_API_KEY e limite de tokens" />
-              <Highlight icon={<ShieldCheck className="h-4 w-4 text-[#fbbf24]" />} label="Persistencia" value="Salva localmente no navegador por enquanto" />
+              <Highlight icon={<Database className="h-4 w-4 text-[#60a5fa]" />} label={t("settings.bankLabel")} value={t("settings.bankValue")} />
+              <Highlight icon={<KeyRound className="h-4 w-4 text-[#34d399]" />} label={t("settings.iaLabel")} value={t("settings.iaValue")} />
+              <Highlight icon={<ShieldCheck className="h-4 w-4 text-[#fbbf24]" />} label={t("settings.persistenceLabel")} value={t("settings.persistenceValue")} />
             </div>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-black/20 p-5 backdrop-blur-sm">
             <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-[0.18em] text-[#71717a]">Prontidao</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-[#71717a]">{t("settings.readinessLabel")}</p>
               <span className="text-sm font-semibold text-white">{completion}%</span>
             </div>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
               <div className="h-full rounded-full bg-gradient-to-r from-[#3b82f6] via-[#22c55e] to-[#f59e0b]" style={{ width: `${completion}%` }} />
             </div>
             <div className="mt-5 space-y-3 text-sm">
-              <StatusLine label="DB URL" ready={Boolean(form.dbUrl.trim())} />
-              <StatusLine label="DB user" ready={Boolean(form.dbUser.trim())} />
-              <StatusLine label="DB password" ready={Boolean(form.dbPassword.trim())} />
-              <StatusLine label="OpenAI API key" ready={Boolean(form.openAiApiKey.trim())} />
+              <StatusLine label={t("settings.dbUrl")} ready={Boolean(form.dbUrl.trim())} />
+              <StatusLine label={t("settings.dbUser")} ready={Boolean(form.dbUser.trim())} />
+              <StatusLine label={t("settings.dbPassword")} ready={Boolean(form.dbPassword.trim())} />
+              <StatusLine label={t("settings.openAiKey")} ready={Boolean(form.openAiApiKey.trim())} />
               <StatusLine
-                label="Max output tokens"
+                label={t("settings.maxOutputTokens")}
                 ready={Boolean(form.openAiMaxOutputTokens.trim()) && !tokenFieldInvalid}
               />
             </div>
             <p className="mt-5 text-xs leading-5 text-[#71717a]">
-              {loading ? "Carregando configuracao do backend..." : `Ultimo salvamento: ${savedAt ? formatSavedAt(savedAt) : "ainda nao salvo"}`}
+              {loading
+                ? t("settings.loadingConfig")
+                : t("settings.lastSaved", { date: savedAt ? formatSavedAt(savedAt) : t("settings.notSaved") })}
             </p>
           </div>
         </div>
@@ -230,24 +234,24 @@ export function Settings() {
         <section className="rounded-2xl border border-[#27272a] bg-[#111116] p-6">
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <h3 className="text-lg font-semibold text-white">Variaveis principais</h3>
+              <h3 className="text-lg font-semibold text-white">{t("settings.mainVariables")}</h3>
               <p className="mt-1 text-sm text-[#71717a]">
-                Use os mesmos nomes esperados no backend Spring Boot.
+                {t("settings.springBootHint")}
               </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
               <Button type="button" variant="outline" onClick={handleReset}>
                 <RotateCcw className="h-4 w-4" />
-                Limpar
+                {t("settings.reset")}
               </Button>
               <Button type="button" variant="outline" onClick={handleTestConnection} disabled={testing || loading}>
                 <Database className="h-4 w-4" />
-                {testing ? "Testando..." : "Testar conexao"}
+                {testing ? t("settings.testing") : t("settings.testConnection")}
               </Button>
               <Button type="button" onClick={handleSave} className="bg-[#3b82f6] text-white hover:bg-[#2563eb]">
                 <Save className="h-4 w-4" />
-                {saving ? "Salvando..." : "Salvar"}
+                {saving ? t("settings.saving") : t("settings.save")}
               </Button>
             </div>
           </div>
@@ -257,7 +261,7 @@ export function Settings() {
               id="db-url"
               label="db-url"
               envName="DB_URL_ADMIN"
-              hint="Ex.: jdbc:postgresql://host:5432/observability"
+              hint={t("settings.dbUrlHint")}
             >
               <Input
                 id="db-url"
@@ -272,7 +276,7 @@ export function Settings() {
               id="db-user"
               label="DB_USER"
               envName="DB_USER"
-              hint="Usuario usado pelo datasource principal."
+              hint={t("settings.dbUserHint")}
             >
               <Input
                 id="db-user"
@@ -287,7 +291,7 @@ export function Settings() {
               id="db-password"
               label="db-password"
               envName="DB_PASSWORD"
-              hint="Mantenha protegido; a tela mascara o valor."
+              hint={t("settings.dbPasswordHint")}
             >
               <div className="relative">
                 <Input
@@ -302,7 +306,7 @@ export function Settings() {
                   type="button"
                   onClick={() => setShowDbPassword((current) => !current)}
                   className="absolute inset-y-0 right-0 flex items-center px-3 text-[#71717a] transition hover:text-white"
-                  aria-label={showDbPassword ? "Ocultar senha" : "Mostrar senha"}
+                  aria-label={showDbPassword ? t("settings.hidePassword") : t("settings.showPassword")}
                 >
                   {showDbPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -313,7 +317,7 @@ export function Settings() {
               id="openai-api-key"
               label="APP_OPENAI_API_KEY"
               envName="APP_OPENAI_API_KEY"
-              hint="Chave usada pela pagina de Analise IA."
+              hint={t("settings.openAiKeyHint")}
             >
               <div className="relative">
                 <Input
@@ -328,7 +332,7 @@ export function Settings() {
                   type="button"
                   onClick={() => setShowApiKey((current) => !current)}
                   className="absolute inset-y-0 right-0 flex items-center px-3 text-[#71717a] transition hover:text-white"
-                  aria-label={showApiKey ? "Ocultar API key" : "Mostrar API key"}
+                  aria-label={showApiKey ? t("settings.hideApiKey") : t("settings.showApiKey")}
                 >
                   {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -339,7 +343,7 @@ export function Settings() {
               id="openai-max-output-tokens"
               label="APP_OPENAI_MAX_OUTPUT_TOKENS"
               envName="APP_OPENAI_MAX_OUTPUT_TOKENS"
-              hint="Inteiro positivo. O backend usa 900 por padrao."
+              hint={t("settings.maxTokensHint")}
               className="md:col-span-2"
             >
               <Input
@@ -353,8 +357,8 @@ export function Settings() {
               />
               <p className={`mt-2 text-xs ${tokenFieldInvalid ? "text-[#ef4444]" : "text-[#71717a]"}`}>
                 {tokenFieldInvalid
-                  ? "Informe um numero inteiro maior que zero."
-                  : "Defina um teto conservador para evitar respostas excessivamente longas."}
+                  ? t("settings.maxTokensError")
+                  : t("settings.maxTokensHelp")}
               </p>
             </FieldShell>
           </div>
@@ -367,9 +371,9 @@ export function Settings() {
                 <CheckCircle2 className="h-5 w-5 text-[#60a5fa]" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">Preview de ambiente</h3>
+                <h3 className="text-lg font-semibold text-white">{t("settings.envPreview")}</h3>
                 <p className="text-sm text-[#71717a]">
-                  Referencia rapida para replicar em `.env`, Docker ou variaveis do host.
+                  {t("settings.envPreviewDesc")}
                 </p>
               </div>
             </div>
@@ -379,25 +383,25 @@ export function Settings() {
           </div>
 
           <div className="rounded-2xl border border-[#27272a] bg-[#111116] p-6">
-            <h3 className="text-lg font-semibold text-white">Estado de aplicacao</h3>
+            <h3 className="text-lg font-semibold text-white">{t("settings.appState")}</h3>
             <div className="mt-4 space-y-3 text-sm text-[#a1a1aa]">
-              <StatusLine label="OpenAI em runtime" ready={Boolean(form.openAiApiKey.trim()) && !loading} />
-              <StatusLine label="Datasource atual" ready={!restartRequired} />
+              <StatusLine label={t("settings.openAiRuntime")} ready={Boolean(form.openAiApiKey.trim()) && !loading} />
+              <StatusLine label={t("settings.currentDatasource")} ready={!restartRequired} />
             </div>
             <div className="mt-4 rounded-xl border border-[#27272a] bg-[#0a0a0f] p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-[#71717a]">Datasource ativo</p>
-              <p className="mt-2 break-all text-sm text-[#e4e4e7]">{activeDatasourceUrl || "Nao carregado"}</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-[#71717a]">{t("settings.activeDatasource")}</p>
+              <p className="mt-2 break-all text-sm text-[#e4e4e7]">{activeDatasourceUrl || t("settings.notLoaded")}</p>
               <p className={`mt-3 text-xs leading-5 ${restartRequired ? "text-[#f59e0b]" : "text-[#10b981]"}`}>
                 {restartRequired
-                  ? "Existe diferenca entre a configuracao salva e o datasource ativo. Reinicie o backend para aplicar o novo banco."
-                  : "O datasource salvo ja coincide com o runtime atual."}
+                  ? t("settings.restartRequired")
+                  : t("settings.datasourceUpToDate")}
               </p>
             </div>
           </div>
 
           {connectionTest && (
             <div className="rounded-2xl border border-[#27272a] bg-[#111116] p-6">
-              <h3 className="text-lg font-semibold text-white">Resultado do teste</h3>
+              <h3 className="text-lg font-semibold text-white">{t("settings.testResult")}</h3>
               <div
                 className={`mt-4 rounded-xl border p-4 ${
                   connectionTest.success
@@ -408,12 +412,19 @@ export function Settings() {
                 <p className={`text-sm font-medium ${connectionTest.success ? "text-[#34d399]" : "text-[#fca5a5]"}`}>
                   {connectionTest.message}
                 </p>
-                <p className="mt-2 text-sm text-[#cbd5e1]">Tempo de resposta: {connectionTest.responseTimeMs} ms</p>
+                <p className="mt-2 text-sm text-[#cbd5e1]">
+                  {t("settings.responseTime", { ms: connectionTest.responseTimeMs })}
+                </p>
                 {connectionTest.success && (
                   <>
-                    <p className="mt-2 text-sm text-[#cbd5e1]">Banco atual: {connectionTest.currentDatabase}</p>
+                    <p className="mt-2 text-sm text-[#cbd5e1]">
+                      {t("settings.currentDatabase", { database: connectionTest.currentDatabase })}
+                    </p>
                     <p className="mt-1 text-sm text-[#cbd5e1]">
-                      Motor: {connectionTest.databaseProductName} {connectionTest.databaseVersion}
+                      {t("settings.engineInfo", {
+                        product: connectionTest.databaseProductName,
+                        version: connectionTest.databaseVersion,
+                      })}
                     </p>
                   </>
                 )}
@@ -422,11 +433,11 @@ export function Settings() {
           )}
 
           <div className="rounded-2xl border border-[#27272a] bg-[#111116] p-6">
-            <h3 className="text-lg font-semibold text-white">Observacoes</h3>
+            <h3 className="text-lg font-semibold text-white">{t("settings.notes")}</h3>
             <ul className="mt-4 space-y-3 text-sm leading-6 text-[#a1a1aa]">
-              <li>Agora a configuracao e persistida no backend em arquivo JSON dentro de `data/`.</li>
-              <li>`APP_OPENAI_API_KEY` e `APP_OPENAI_MAX_OUTPUT_TOKENS` passam a valer imediatamente para a integracao de IA.</li>
-              <li>As configuracoes de banco ficam salvas e podem ser testadas agora, mas o datasource principal do Spring ainda exige reinicio para trocar de conexao.</li>
+              <li>{t("settings.note1")}</li>
+              <li>{t("settings.note2")}</li>
+              <li>{t("settings.note3")}</li>
             </ul>
           </div>
         </section>
@@ -456,6 +467,7 @@ function Highlight({
 }
 
 function StatusLine({ label, ready }: { label: string; ready: boolean }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2">
       <span className="text-[#cbd5e1]">{label}</span>
@@ -464,7 +476,7 @@ function StatusLine({ label, ready }: { label: string; ready: boolean }) {
           ready ? "bg-[#10b981]/15 text-[#34d399]" : "bg-[#27272a] text-[#a1a1aa]"
         }`}
       >
-        {ready ? "OK" : "Pendente"}
+        {ready ? t("settings.ok") : t("settings.pending")}
       </span>
     </div>
   );

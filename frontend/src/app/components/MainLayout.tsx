@@ -1,9 +1,10 @@
 import { Outlet, Link, useLocation } from "react-router";
 import { useState } from "react";
-import { 
-  Lock, 
-  Code2, 
-  Cable, 
+import { useTranslation } from "react-i18next";
+import {
+  Lock,
+  Code2,
+  Cable,
   BarChart3,
   BrainCircuit,
   Bot,
@@ -15,22 +16,24 @@ import {
 import { cn } from "./ui/utils";
 import { LiveActivityIndicator } from "./LiveActivityIndicator";
 import { RefreshButton } from "./RefreshButton";
-
-const navigation = [
-  { name: "Overview", href: "/overview", icon: BarChart3 },
-  { name: "Intelligence", href: "/intelligence", icon: BrainCircuit },
-  { name: "Locks", href: "/locks", icon: Lock },
-  { name: "Queries", href: "/queries", icon: Code2 },
-  { name: "Connections", href: "/connections", icon: Cable },
-  { name: "History", href: "/history", icon: HistoryIcon },
-  { name: "Analise IA", href: "/ai-analysis", icon: Bot },
-  { name: "Configuracao", href: "/settings", icon: SettingsIcon },
-];
+import { setLanguage } from "../../i18n";
 
 export function MainLayout() {
   const location = useLocation();
+  const { t, i18n } = useTranslation();
   const [refreshAction, setRefreshAction] = useState<(() => void) | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  const navigation = [
+    { name: t("nav.overview"), href: "/overview", icon: BarChart3 },
+    { name: t("nav.intelligence"), href: "/intelligence", icon: BrainCircuit },
+    { name: t("nav.locks"), href: "/locks", icon: Lock },
+    { name: t("nav.queries"), href: "/queries", icon: Code2 },
+    { name: t("nav.connections"), href: "/connections", icon: Cable },
+    { name: t("nav.history"), href: "/history", icon: HistoryIcon },
+    { name: t("nav.aiAnalysis"), href: "/ai-analysis", icon: Bot },
+    { name: t("nav.settings"), href: "/settings", icon: SettingsIcon },
+  ];
 
   const handleRefresh = async () => {
     if (!refreshAction) {
@@ -45,6 +48,12 @@ export function MainLayout() {
     }
   };
 
+  const currentLang = i18n.language as "pt-BR" | "en-US";
+
+  const toggleLanguage = () => {
+    setLanguage(currentLang === "pt-BR" ? "en-US" : "pt-BR");
+  };
+
   return (
     <div className="dark min-h-screen flex">
       {/* Sidebar */}
@@ -53,7 +62,7 @@ export function MainLayout() {
         <div className="h-16 flex items-center px-6 border-b border-[#27272a]">
           <Database className="w-6 h-6 text-[#3b82f6]" />
           <span className="ml-3 text-lg font-semibold text-white">
-            DB Metrics Monitor
+            {t("layout.title")}
           </span>
         </div>
 
@@ -62,16 +71,16 @@ export function MainLayout() {
           {navigation.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
-            
+
             return (
               <Link
-                key={item.name}
+                key={item.href}
                 to={item.href}
                 className={cn(
                   "flex items-center px-3 py-2.5 rounded-lg transition-colors",
                   isActive
                     ? "bg-[#1f1f28] text-white"
-                    : "text-[#a1a1aa] hover:bg-[#1f1f28] hover:text-white"
+                    : "text-[#a1a1aa] hover:bg-[#1f1f28] hover:text-white",
                 )}
               >
                 <Icon className="w-5 h-5" />
@@ -97,12 +106,27 @@ export function MainLayout() {
         <header className="h-16 bg-[#0a0a0f] border-b border-[#27272a] flex items-center justify-between px-6">
           <div className="flex items-center space-x-4">
             <h1 className="text-xl font-semibold text-white">
-              {navigation.find((item) => item.href === location.pathname)?.name || "Overview"}
+              {navigation.find((item) => item.href === location.pathname)
+                ?.name || t("nav.overview")}
             </h1>
             <LiveActivityIndicator />
           </div>
-          
-          <div className="flex items-center space-x-4">
+
+          <div className="flex items-center space-x-3">
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="flex items-center gap-1.5 rounded-lg border border-[#27272a] bg-[#111116] px-3 py-1.5 text-xs font-medium text-[#a1a1aa] transition-colors hover:border-[#3b82f6]/40 hover:text-white"
+              title={t("layout.languageLabel")}
+            >
+              <span className={currentLang === "pt-BR" ? "text-white" : "text-[#71717a]"}>
+                PT
+              </span>
+              <span className="text-[#27272a]">|</span>
+              <span className={currentLang === "en-US" ? "text-white" : "text-[#71717a]"}>
+                EN
+              </span>
+            </button>
             <RefreshButton onClick={handleRefresh} refreshing={refreshing} />
             <SystemStatus />
           </div>
@@ -118,23 +142,24 @@ export function MainLayout() {
 }
 
 function SystemStatus() {
+  const { t } = useTranslation();
   const status = "healthy"; // healthy, warning, critical
 
   const statusConfig = {
     healthy: {
       color: "text-[#10b981]",
       bg: "bg-[#10b981]/10",
-      text: "System Healthy",
+      text: t("layout.systemHealthy"),
     },
     warning: {
       color: "text-[#f59e0b]",
       bg: "bg-[#f59e0b]/10",
-      text: "Warning",
+      text: t("layout.systemWarning"),
     },
     critical: {
       color: "text-[#ef4444]",
       bg: "bg-[#ef4444]/10",
-      text: "Critical",
+      text: t("layout.systemCritical"),
     },
   };
 

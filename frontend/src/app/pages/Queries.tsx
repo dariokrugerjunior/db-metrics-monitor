@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { DataTable, Column } from "../components/DataTable";
 import { StatusBadge } from "../components/StatusBadge";
 import { StatusBanner } from "../components/StatusBanner";
@@ -57,6 +58,7 @@ function mapQueryRow(query: TopQueryResponse): QueryRow {
 }
 
 export function Queries() {
+  const { t } = useTranslation();
   const { data, loading, error, refresh } = useApiPolling(fetchQueryData, {
     initialData: {
       top: emptyQueryStats,
@@ -96,46 +98,46 @@ export function Queries() {
   const columns: Column<QueryRow | RunningQueryRow>[] = [
     {
       key: "query",
-      header: "Query",
+      header: t("queries.database") === "Database" ? "Query" : "Query",
       render: (row) => (
         <span className="block max-w-lg truncate font-mono text-xs text-[#a1a1aa]">{row.query}</span>
       ),
     },
     {
       key: "executions",
-      header: "Execuções",
+      header: t("queries.executions"),
       sortable: true,
       render: (row) => formatCompactNumber("calls" in row ? row.calls : row.executions),
     },
     {
       key: "avgTime",
-      header: "Avg Time",
+      header: t("queries.avgTime"),
       sortable: true,
       render: (row) =>
         `${("meanExecTime" in row ? row.meanExecTime : row.avgTime).toFixed(2)}ms`,
     },
     {
       key: "totalTime",
-      header: "Total Time",
+      header: t("queries.totalTime"),
       sortable: true,
       render: (row) =>
         `${((("totalExecTime" in row ? row.totalExecTime : row.totalTime) ?? 0) / 1000).toFixed(2)}s`,
     },
     {
       key: "rows",
-      header: "Rows",
+      header: t("queries.rows"),
       sortable: true,
       render: (row) => formatCompactNumber("rows" in row ? row.rows : 0),
     },
     {
       key: "database",
-      header: "Database",
+      header: t("queries.database"),
       sortable: true,
       render: (row) => ("database" in row ? row.database : "postgres"),
     },
     {
       key: "status",
-      header: "Status",
+      header: t("queries.status"),
       render: (row) => <StatusBadge status={row.status} />,
     },
   ];
@@ -147,31 +149,31 @@ export function Queries() {
   return (
     <div className="space-y-6">
       {error && (
-        <StatusBanner status="error" title="Falha ao carregar queries" description={error} />
+        <StatusBanner status="error" title={t("queries.errorBanner")} description={error} />
       )}
 
       {!data.top.available && data.top.message && (
-        <StatusBanner status="warning" title="pg_stat_statements indisponível" description={data.top.message} />
+        <StatusBanner status="warning" title={t("queries.pgStatUnavailable")} description={data.top.message} />
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <StatCard title="Total Queries" value={topQueries.length} subtitle="Top queries retornadas" />
+        <StatCard title={t("queries.totalQueries")} value={topQueries.length} subtitle={t("queries.topQueriesSubtitle")} />
         <StatCard
-          title="Slow Queries"
+          title={t("queries.slowQueries")}
           value={slowQueries.length}
-          subtitle="Lista ordenada por tempo total"
+          subtitle={t("queries.slowQueriesSubtitle")}
           highlight="warning"
         />
         <StatCard
-          title="Running Now"
+          title={t("queries.runningNow")}
           value={runningQueries.length}
-          subtitle="Acima do threshold configurado"
+          subtitle={t("queries.runningNowSubtitle")}
           highlight="info"
         />
         <StatCard
-          title="Avg Response"
+          title={t("queries.avgResponse")}
           value={`${currentAverage.toFixed(2)}ms`}
-          subtitle="Média do snapshot"
+          subtitle={t("queries.avgResponseSubtitle")}
           highlight="healthy"
         />
       </div>
@@ -179,7 +181,7 @@ export function Queries() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#71717a]" />
         <Input
-          placeholder="Buscar por texto da query ou database..."
+          placeholder={t("queries.searchPlaceholder")}
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           className="border-[#27272a] bg-[#111116] pl-10 text-white"
@@ -189,13 +191,13 @@ export function Queries() {
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as QueryTab)} className="w-full">
         <TabsList className="border border-[#27272a] bg-[#111116]">
           <TabsTrigger value="top" className="data-[state=active]:bg-[#1f1f28]">
-            Top Queries
+            {t("queries.tabTop")}
           </TabsTrigger>
           <TabsTrigger value="slow" className="data-[state=active]:bg-[#1f1f28]">
-            Slow Queries
+            {t("queries.tabSlow")}
           </TabsTrigger>
           <TabsTrigger value="running" className="data-[state=active]:bg-[#1f1f28]">
-            Running Queries
+            {t("queries.tabRunning")}
           </TabsTrigger>
         </TabsList>
 
@@ -203,20 +205,20 @@ export function Queries() {
           <DataTable
             data={getFilteredData(topQueries)}
             columns={columns}
-            emptyMessage={loading ? "Carregando top queries..." : "Nenhuma query encontrada"}
+            emptyMessage={loading ? t("queries.loadingTop") : t("queries.noQueriesFound")}
           />
         </TabsContent>
 
         <TabsContent value="slow" className="mt-4">
           <div className="mb-4 rounded-lg border border-[#f59e0b]/30 bg-[#f59e0b]/10 p-4">
             <p className="text-sm text-[#f59e0b]">
-              Queries lentas vindas do backend. O ranking depende de `pg_stat_statements`.
+              {t("queries.slowQueriesWarning")}
             </p>
           </div>
           <DataTable
             data={getFilteredData(slowQueries)}
             columns={columns}
-            emptyMessage={loading ? "Carregando slow queries..." : "Nenhuma slow query encontrada"}
+            emptyMessage={loading ? t("queries.loadingSlow") : t("queries.noSlowFound")}
           />
         </TabsContent>
 
@@ -229,7 +231,7 @@ export function Queries() {
               })),
             )}
             columns={columns}
-            emptyMessage={loading ? "Carregando running queries..." : "Nenhuma running query"}
+            emptyMessage={loading ? t("queries.loadingRunning") : t("queries.noRunningFound")}
           />
         </TabsContent>
       </Tabs>
