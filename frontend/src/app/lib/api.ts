@@ -4,8 +4,12 @@ import type {
   AiAnalysisHistoryResponse,
   AiAnalysisRequest,
   AiAnalysisResponse,
+  DatabaseAuthRequest,
+  DatabaseAuthResponse,
   DatabaseConnectionTestRequest,
   DatabaseConnectionTestResponse,
+  OpenAiConnectionTestRequest,
+  OpenAiConnectionTestResponse,
   DatabaseIntelligenceOverviewResponse,
   ConnectionSummaryResponse,
   DashboardSummaryResponse,
@@ -133,9 +137,19 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  testOpenAiConnection: (payload: OpenAiConnectionTestRequest) =>
+    request<OpenAiConnectionTestResponse>("/configuration/openai/test", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   terminateSession: (pid: number, reason = "Terminated from frontend dashboard") =>
     request<TerminateSessionResponse>(`/db/sessions/${pid}/terminate`, {
       method: "POST",
       body: JSON.stringify({ reason, force: true }),
+    }),
+  connectDatabase: (payload: DatabaseAuthRequest) =>
+    request<DatabaseAuthResponse>("/auth/connect", {
+      method: "POST",
+      body: JSON.stringify(payload),
     }),
 };

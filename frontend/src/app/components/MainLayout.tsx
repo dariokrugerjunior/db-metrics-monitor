@@ -11,16 +11,19 @@ import {
   History as HistoryIcon,
   Database,
   Circle,
+  LogOut,
   Settings as SettingsIcon,
 } from "lucide-react";
 import { cn } from "./ui/utils";
 import { LiveActivityIndicator } from "./LiveActivityIndicator";
 import { RefreshButton } from "./RefreshButton";
 import { setLanguage } from "../../i18n";
+import { useAuth } from "../context/AuthContext";
 
 export function MainLayout() {
   const location = useLocation();
   const { t, i18n } = useTranslation();
+  const { disconnect } = useAuth();
   const [refreshAction, setRefreshAction] = useState<(() => void) | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -128,6 +131,15 @@ export function MainLayout() {
               </span>
             </button>
             <RefreshButton onClick={handleRefresh} refreshing={refreshing} />
+            <button
+              type="button"
+              onClick={disconnect}
+              className="flex items-center gap-1.5 rounded-lg border border-[#27272a] bg-[#111116] px-3 py-1.5 text-xs font-medium text-[#a1a1aa] transition-colors hover:border-red-500/40 hover:text-red-400"
+              title={t("connect.disconnect")}
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              {t("connect.disconnect")}
+            </button>
             <SystemStatus />
           </div>
         </header>

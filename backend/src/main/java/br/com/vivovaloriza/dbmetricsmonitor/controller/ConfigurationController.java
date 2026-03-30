@@ -4,6 +4,8 @@ import br.com.vivovaloriza.dbmetricsmonitor.dto.AppConfigurationResponse;
 import br.com.vivovaloriza.dbmetricsmonitor.dto.AppConfigurationUpdateRequest;
 import br.com.vivovaloriza.dbmetricsmonitor.dto.DatabaseConnectionTestRequest;
 import br.com.vivovaloriza.dbmetricsmonitor.dto.DatabaseConnectionTestResponse;
+import br.com.vivovaloriza.dbmetricsmonitor.dto.OpenAiConnectionTestRequest;
+import br.com.vivovaloriza.dbmetricsmonitor.dto.OpenAiConnectionTestResponse;
 import br.com.vivovaloriza.dbmetricsmonitor.service.RuntimeConfigurationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,5 +42,11 @@ public class ConfigurationController {
     @Operation(summary = "Testa uma conexao PostgreSQL sem alterar o datasource atual")
     public DatabaseConnectionTestResponse testDatabaseConnection(@Valid @RequestBody DatabaseConnectionTestRequest request) {
         return runtimeConfigurationService.testConnection(request);
+    }
+
+    @PostMapping("/openai/test")
+    @Operation(summary = "Testa a autenticacao da OpenAI sem alterar a configuracao atual")
+    public OpenAiConnectionTestResponse testOpenAiConnection(@Valid @RequestBody OpenAiConnectionTestRequest request) {
+        return runtimeConfigurationService.testOpenAiConnection(request);
     }
 }

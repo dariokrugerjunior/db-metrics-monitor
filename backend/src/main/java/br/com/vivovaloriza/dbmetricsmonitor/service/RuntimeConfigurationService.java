@@ -3,12 +3,21 @@ package br.com.vivovaloriza.dbmetricsmonitor.service;
 import br.com.vivovaloriza.dbmetricsmonitor.config.AppProperties;
 import br.com.vivovaloriza.dbmetricsmonitor.dto.AppConfigurationResponse;
 import br.com.vivovaloriza.dbmetricsmonitor.dto.AppConfigurationUpdateRequest;
+import br.com.vivovaloriza.dbmetricsmonitor.dto.DatabaseAuthRequest;
+import br.com.vivovaloriza.dbmetricsmonitor.dto.DatabaseAuthResponse;
 import br.com.vivovaloriza.dbmetricsmonitor.dto.DatabaseConnectionTestRequest;
 import br.com.vivovaloriza.dbmetricsmonitor.dto.DatabaseConnectionTestResponse;
+import br.com.vivovaloriza.dbmetricsmonitor.dto.OpenAiConnectionTestRequest;
+import br.com.vivovaloriza.dbmetricsmonitor.dto.OpenAiConnectionTestResponse;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -16,6 +25,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +40,7 @@ public class RuntimeConfigurationService {
 
     private final AppProperties appProperties;
     private final ObjectMapper objectMapper;
+    private final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
     @Value("${spring.datasource.url}")
     private String activeDatasourceUrl;
@@ -115,6 +126,100 @@ public class RuntimeConfigurationService {
                     sanitizeSqlMessage(ex)
             );
         }
+    }
+
+    public OpenAiConnectionTestResponse testOpenAiConnection(OpenAiConnectionTestRequest request) {
+        long start = System.currentTimeMillis();
+
+        try {
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(appProperties.getAi().getBaseUrl() + "/models"))
+                    .header("Authorization", "Bearer " + request.apiKey().trim())
+                    .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(20))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            long elapsed = System.currentTimeMillis() - start;
+
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                return new OpenAiConnectionTestResponse(
+                        false,
+                        0,
+                        elapsed,
+                        "Falha ao autenticar na OpenAI. Status HTTP " + response.statusCode() + "."
+                );
+            }
+
+            JsonNode root = objectMapper.readTree(response.body());
+            int modelCount = root.path("data").isArray() ? root.path("data").size() : 0;
+
+            return new OpenAiConnectionTestResponse(
+                    true,
+                    modelCount,
+                    elapsed,
+                    "Autenticacao OpenAI validada com sucesso."
+            );
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            return new OpenAiConnectionTestResponse(false, 0, System.currentTimeMillis() - start, "Erro ao testar a OpenAI.");
+        } catch (IOException ex) {
+            return new OpenAiConnectionTestResponse(false, 0, System.currentTimeMillis() - start, "Erro ao testar a OpenAI.");
+        }
+    }
+
+    /**
+     * Testa a conexao com o banco e, se bem-sucedida, persiste apenas as credenciais
+     * de banco (preservando as configuracoes OpenAI existentes).
+     * A senha nunca e incluida na resposta.
+     */
+    public DatabaseAuthResponse connectAndSaveDatabase(DatabaseAuthRequest request) {
+        DatabaseConnectionTestRequest testReq = new DatabaseConnectionTestRequest(
+                request.dbUrl(), request.dbUser(), request.dbPassword()
+        );
+        DatabaseConnectionTestResponse testResult = testConnection(testReq);
+
+        if (!testResult.success()) {
+            return new DatabaseAuthResponse(
+                    false,
+                    request.dbUrl(),
+                    null,
+                    null,
+                    null,
+                    testResult.responseTimeMs(),
+                    testResult.message()
+            );
+        }
+
+        saveDatabaseCredentials(request.dbUrl(), request.dbUser(), request.dbPassword());
+
+        return new DatabaseAuthResponse(
+                true,
+                request.dbUrl(),
+                testResult.databaseProductName(),
+                testResult.databaseVersion(),
+                testResult.currentDatabase(),
+                testResult.responseTimeMs(),
+                "Conexao realizada com sucesso."
+        );
+    }
+
+    /**
+     * Persiste somente as credenciais de banco, mantendo as configuracoes OpenAI atuais.
+     */
+    public void saveDatabaseCredentials(String dbUrl, String dbUser, String dbPassword) {
+        EffectiveConfiguration current = getEffectiveConfiguration();
+        Instant savedAt = Instant.now();
+        storedConfiguration = new StoredConfiguration(
+                dbUrl.trim(),
+                dbUser.trim(),
+                dbPassword,
+                current.openAiApiKey(),
+                current.openAiMaxOutputTokens(),
+                savedAt
+        );
+        persist(storedConfiguration);
     }
 
     public String getEffectiveOpenAiApiKey() {

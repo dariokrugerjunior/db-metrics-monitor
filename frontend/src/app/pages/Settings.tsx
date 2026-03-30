@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  CheckCircle2,
   Database,
   Eye,
   EyeOff,
   KeyRound,
-  RotateCcw,
   Save,
   ServerCog,
   ShieldCheck,
@@ -16,7 +14,11 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { api } from "../lib/api";
-import type { AppConfigurationUpdateRequest, DatabaseConnectionTestResponse } from "../lib/types";
+import type {
+  AppConfigurationUpdateRequest,
+  DatabaseConnectionTestResponse,
+  OpenAiConnectionTestResponse,
+} from "../lib/types";
 
 type SettingsForm = {
   dbUrl: string;
@@ -45,7 +47,9 @@ export function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [testingOpenAi, setTestingOpenAi] = useState(false);
   const [connectionTest, setConnectionTest] = useState<DatabaseConnectionTestResponse | null>(null);
+  const [openAiTest, setOpenAiTest] = useState<OpenAiConnectionTestResponse | null>(null);
 
   useEffect(() => {
     const loadConfiguration = async () => {
@@ -95,7 +99,7 @@ export function Settings() {
     }));
   };
 
-  const handleSave = () => {
+  const persistConfiguration = async () => {
     if (loading || saving) {
       return;
     }
@@ -114,30 +118,32 @@ export function Settings() {
     };
 
     setSaving(true);
-    void api
-      .updateConfiguration(payload)
-      .then((response) => {
-        setSavedAt(response.savedAt);
-        setActiveDatasourceUrl(response.activeDatasourceUrl);
-        setRestartRequired(response.restartRequired);
-        toast.success(
-          response.restartRequired
-            ? t("settings.savedRestartRequired")
-            : t("settings.savedApplied"),
-        );
-      })
-      .catch((error) => {
-        toast.error(error instanceof Error ? error.message : t("settings.saveError"));
-      })
-      .finally(() => {
-        setSaving(false);
-      });
+    try {
+      const response = await api.updateConfiguration(payload);
+      setSavedAt(response.savedAt);
+      setActiveDatasourceUrl(response.activeDatasourceUrl);
+      setRestartRequired(response.restartRequired);
+      toast.success(
+        response.restartRequired
+          ? t("settings.savedRestartRequired")
+          : t("settings.savedApplied"),
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("settings.saveError"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSave = () => {
+    void persistConfiguration();
   };
 
   const handleReset = () => {
     setForm(defaultValues);
     setSavedAt(null);
     setConnectionTest(null);
+    setOpenAiTest(null);
     setRestartRequired(false);
     toast.success(t("settings.formReset"));
   };
@@ -171,13 +177,37 @@ export function Settings() {
       });
   };
 
-  const environmentPreview = [
-    `DB_URL_ADMIN=${form.dbUrl || "<defina o DB URL>"}`,
-    `DB_USER=${form.dbUser || "<defina o DB user>"}`,
-    `DB_PASSWORD=${form.dbPassword ? "********" : "<defina o DB password>"}`,
-    `APP_OPENAI_API_KEY=${form.openAiApiKey ? "********" : "<defina a API key>"}`,
-    `APP_OPENAI_MAX_OUTPUT_TOKENS=${form.openAiMaxOutputTokens || "<defina os tokens>"}`,
-  ].join("\n");
+  const handleTestOpenAi = () => {
+    if (testingOpenAi || loading) {
+      return;
+    }
+
+    if (!form.openAiApiKey.trim()) {
+      toast.error(t("settings.openAiKeyRequired"));
+      return;
+    }
+
+    setTestingOpenAi(true);
+    setOpenAiTest(null);
+    void api
+      .testOpenAiConnection({
+        apiKey: form.openAiApiKey.trim(),
+      })
+      .then((response) => {
+        setOpenAiTest(response);
+        if (response.success) {
+          toast.success(t("settings.openAiValidated"));
+          return;
+        }
+        toast.error(response.message);
+      })
+      .catch((error) => {
+        toast.error(error instanceof Error ? error.message : t("settings.openAiTestError"));
+      })
+      .finally(() => {
+        setTestingOpenAi(false);
+      });
+  };
 
   return (
     <div className="space-y-6">
@@ -190,26 +220,41 @@ export function Settings() {
               </div>
               <div>
                 <h2 className="text-2xl font-semibold text-white">{t("settings.title")}</h2>
-                <p className="text-sm text-[#cbd5e1]">
-                  {t("settings.description")}
-                </p>
+                <p className="text-sm text-[#cbd5e1]">{t("settings.description")}</p>
               </div>
             </div>
 
             <div className="grid gap-3 text-sm text-[#a1a1aa] md:grid-cols-3">
-              <Highlight icon={<Database className="h-4 w-4 text-[#60a5fa]" />} label={t("settings.bankLabel")} value={t("settings.bankValue")} />
-              <Highlight icon={<KeyRound className="h-4 w-4 text-[#34d399]" />} label={t("settings.iaLabel")} value={t("settings.iaValue")} />
-              <Highlight icon={<ShieldCheck className="h-4 w-4 text-[#fbbf24]" />} label={t("settings.persistenceLabel")} value={t("settings.persistenceValue")} />
+              <Highlight
+                icon={<Database className="h-4 w-4 text-[#60a5fa]" />}
+                label={t("settings.bankLabel")}
+                value={t("settings.bankValue")}
+              />
+              <Highlight
+                icon={<KeyRound className="h-4 w-4 text-[#34d399]" />}
+                label={t("settings.iaLabel")}
+                value={t("settings.iaValue")}
+              />
+              <Highlight
+                icon={<ShieldCheck className="h-4 w-4 text-[#fbbf24]" />}
+                label={t("settings.persistenceLabel")}
+                value={t("settings.persistenceValue")}
+              />
             </div>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-black/20 p-5 backdrop-blur-sm">
             <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-[0.18em] text-[#71717a]">{t("settings.readinessLabel")}</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-[#71717a]">
+                {t("settings.readinessLabel")}
+              </p>
               <span className="text-sm font-semibold text-white">{completion}%</span>
             </div>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full rounded-full bg-gradient-to-r from-[#3b82f6] via-[#22c55e] to-[#f59e0b]" style={{ width: `${completion}%` }} />
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#3b82f6] via-[#22c55e] to-[#f59e0b]"
+                style={{ width: `${completion}%` }}
+              />
             </div>
             <div className="mt-5 space-y-3 text-sm">
               <StatusLine label={t("settings.dbUrl")} ready={Boolean(form.dbUrl.trim())} />
@@ -224,7 +269,9 @@ export function Settings() {
             <p className="mt-5 text-xs leading-5 text-[#71717a]">
               {loading
                 ? t("settings.loadingConfig")
-                : t("settings.lastSaved", { date: savedAt ? formatSavedAt(savedAt) : t("settings.notSaved") })}
+                : t("settings.lastSaved", {
+                    date: savedAt ? formatSavedAt(savedAt) : t("settings.notSaved"),
+                  })}
             </p>
           </div>
         </div>
@@ -235,21 +282,27 @@ export function Settings() {
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
               <h3 className="text-lg font-semibold text-white">{t("settings.mainVariables")}</h3>
-              <p className="mt-1 text-sm text-[#71717a]">
-                {t("settings.springBootHint")}
-              </p>
+              <p className="mt-1 text-sm text-[#71717a]">{t("settings.springBootHint")}</p>
             </div>
 
             <div className="flex flex-wrap gap-3">
               <Button type="button" variant="outline" onClick={handleReset}>
-                <RotateCcw className="h-4 w-4" />
                 {t("settings.reset")}
               </Button>
-              <Button type="button" variant="outline" onClick={handleTestConnection} disabled={testing || loading}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleTestConnection}
+                disabled={testing || loading}
+              >
                 <Database className="h-4 w-4" />
                 {testing ? t("settings.testing") : t("settings.testConnection")}
               </Button>
-              <Button type="button" onClick={handleSave} className="bg-[#3b82f6] text-white hover:bg-[#2563eb]">
+              <Button
+                type="button"
+                onClick={handleSave}
+                className="bg-[#3b82f6] text-white hover:bg-[#2563eb]"
+              >
                 <Save className="h-4 w-4" />
                 {saving ? t("settings.saving") : t("settings.save")}
               </Button>
@@ -259,7 +312,7 @@ export function Settings() {
           <div className="grid gap-5 md:grid-cols-2">
             <FieldShell
               id="db-url"
-              label="db-url"
+              label="DB_URL_ADMIN"
               envName="DB_URL_ADMIN"
               hint={t("settings.dbUrlHint")}
             >
@@ -289,7 +342,7 @@ export function Settings() {
 
             <FieldShell
               id="db-password"
-              label="db-password"
+              label="DB_PASSWORD"
               envName="DB_PASSWORD"
               hint={t("settings.dbPasswordHint")}
             >
@@ -299,7 +352,7 @@ export function Settings() {
                   type={showDbPassword ? "text" : "password"}
                   value={form.dbPassword}
                   onChange={(event) => handleChange("dbPassword", event.target.value)}
-                  placeholder="••••••••"
+                  placeholder="********"
                   className="h-11 border-[#27272a] bg-[#0a0a0f] pr-11 text-white"
                 />
                 <button
@@ -313,85 +366,102 @@ export function Settings() {
               </div>
             </FieldShell>
 
-            <FieldShell
-              id="openai-api-key"
-              label="APP_OPENAI_API_KEY"
-              envName="APP_OPENAI_API_KEY"
-              hint={t("settings.openAiKeyHint")}
-            >
-              <div className="relative">
-                <Input
-                  id="openai-api-key"
-                  type={showApiKey ? "text" : "password"}
-                  value={form.openAiApiKey}
-                  onChange={(event) => handleChange("openAiApiKey", event.target.value)}
-                  placeholder="sk-proj-..."
-                  className="h-11 border-[#27272a] bg-[#0a0a0f] pr-11 text-white"
-                />
-                <button
+            <div className="rounded-2xl border border-[#27272a] bg-[#0a0a0f] p-4 md:col-span-2">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-white">{t("settings.openAiSummaryTitle")}</p>
+                  <p className="mt-1 text-xs leading-5 text-[#71717a]">
+                    {t("settings.openAiSummaryHint")}
+                  </p>
+                </div>
+                <Button
                   type="button"
-                  onClick={() => setShowApiKey((current) => !current)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-[#71717a] transition hover:text-white"
-                  aria-label={showApiKey ? t("settings.hideApiKey") : t("settings.showApiKey")}
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTestOpenAi}
+                  disabled={testingOpenAi || loading}
                 >
-                  {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+                  <ShieldCheck className="h-4 w-4" />
+                  {testingOpenAi ? t("settings.testingOpenAi") : t("settings.testOpenAi")}
+                </Button>
               </div>
-            </FieldShell>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <FieldShell
+                  id="openai-api-key"
+                  label="APP_OPENAI_API_KEY"
+                  envName="APP_OPENAI_API_KEY"
+                  hint={t("settings.openAiKeyHint")}
+                >
+                  <div className="relative">
+                    <Input
+                      id="openai-api-key"
+                      type={showApiKey ? "text" : "password"}
+                      value={form.openAiApiKey}
+                      onChange={(event) => handleChange("openAiApiKey", event.target.value)}
+                      placeholder="sk-proj-..."
+                      className="h-11 border-[#27272a] bg-[#111116] pr-11 text-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKey((current) => !current)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-[#71717a] transition hover:text-white"
+                      aria-label={showApiKey ? t("settings.hideApiKey") : t("settings.showApiKey")}
+                    >
+                      {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </FieldShell>
 
-            <FieldShell
-              id="openai-max-output-tokens"
-              label="APP_OPENAI_MAX_OUTPUT_TOKENS"
-              envName="APP_OPENAI_MAX_OUTPUT_TOKENS"
-              hint={t("settings.maxTokensHint")}
-              className="md:col-span-2"
-            >
-              <Input
-                id="openai-max-output-tokens"
-                inputMode="numeric"
-                value={form.openAiMaxOutputTokens}
-                onChange={(event) => handleChange("openAiMaxOutputTokens", event.target.value)}
-                placeholder="900"
-                aria-invalid={tokenFieldInvalid}
-                className="h-11 border-[#27272a] bg-[#0a0a0f] text-white"
-              />
-              <p className={`mt-2 text-xs ${tokenFieldInvalid ? "text-[#ef4444]" : "text-[#71717a]"}`}>
-                {tokenFieldInvalid
-                  ? t("settings.maxTokensError")
-                  : t("settings.maxTokensHelp")}
-              </p>
-            </FieldShell>
+                <FieldShell
+                  id="openai-max-output-tokens"
+                  label="APP_OPENAI_MAX_OUTPUT_TOKENS"
+                  envName="APP_OPENAI_MAX_OUTPUT_TOKENS"
+                  hint={t("settings.maxTokensHint")}
+                >
+                  <Input
+                    id="openai-max-output-tokens"
+                    inputMode="numeric"
+                    value={form.openAiMaxOutputTokens}
+                    onChange={(event) => handleChange("openAiMaxOutputTokens", event.target.value)}
+                    placeholder="900"
+                    aria-invalid={tokenFieldInvalid}
+                    className="h-11 border-[#27272a] bg-[#111116] text-white"
+                  />
+                  <p
+                    className={`mt-2 text-xs ${
+                      tokenFieldInvalid ? "text-[#ef4444]" : "text-[#71717a]"
+                    }`}
+                  >
+                    {tokenFieldInvalid ? t("settings.maxTokensError") : t("settings.maxTokensHelp")}
+                  </p>
+                </FieldShell>
+              </div>
+            </div>
           </div>
         </section>
 
         <section className="space-y-6">
           <div className="rounded-2xl border border-[#27272a] bg-[#111116] p-6">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="rounded-xl bg-[#3b82f6]/10 p-3">
-                <CheckCircle2 className="h-5 w-5 text-[#60a5fa]" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-white">{t("settings.envPreview")}</h3>
-                <p className="text-sm text-[#71717a]">
-                  {t("settings.envPreviewDesc")}
-                </p>
-              </div>
-            </div>
-            <pre className="overflow-x-auto rounded-xl border border-[#27272a] bg-[#0a0a0f] p-4 text-xs leading-6 text-[#cbd5e1]">
-              <code>{environmentPreview}</code>
-            </pre>
-          </div>
-
-          <div className="rounded-2xl border border-[#27272a] bg-[#111116] p-6">
             <h3 className="text-lg font-semibold text-white">{t("settings.appState")}</h3>
             <div className="mt-4 space-y-3 text-sm text-[#a1a1aa]">
-              <StatusLine label={t("settings.openAiRuntime")} ready={Boolean(form.openAiApiKey.trim()) && !loading} />
+              <StatusLine
+                label={t("settings.openAiRuntime")}
+                ready={Boolean(form.openAiApiKey.trim()) && !loading}
+              />
               <StatusLine label={t("settings.currentDatasource")} ready={!restartRequired} />
             </div>
             <div className="mt-4 rounded-xl border border-[#27272a] bg-[#0a0a0f] p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-[#71717a]">{t("settings.activeDatasource")}</p>
-              <p className="mt-2 break-all text-sm text-[#e4e4e7]">{activeDatasourceUrl || t("settings.notLoaded")}</p>
-              <p className={`mt-3 text-xs leading-5 ${restartRequired ? "text-[#f59e0b]" : "text-[#10b981]"}`}>
+              <p className="text-xs uppercase tracking-[0.18em] text-[#71717a]">
+                {t("settings.activeDatasource")}
+              </p>
+              <p className="mt-2 break-all text-sm text-[#e4e4e7]">
+                {activeDatasourceUrl || t("settings.notLoaded")}
+              </p>
+              <p
+                className={`mt-3 text-xs leading-5 ${
+                  restartRequired ? "text-[#f59e0b]" : "text-[#10b981]"
+                }`}
+              >
                 {restartRequired
                   ? t("settings.restartRequired")
                   : t("settings.datasourceUpToDate")}
@@ -409,7 +479,11 @@ export function Settings() {
                     : "border-[#ef4444]/30 bg-[#ef4444]/10"
                 }`}
               >
-                <p className={`text-sm font-medium ${connectionTest.success ? "text-[#34d399]" : "text-[#fca5a5]"}`}>
+                <p
+                  className={`text-sm font-medium ${
+                    connectionTest.success ? "text-[#34d399]" : "text-[#fca5a5]"
+                  }`}
+                >
                   {connectionTest.message}
                 </p>
                 <p className="mt-2 text-sm text-[#cbd5e1]">
@@ -418,7 +492,9 @@ export function Settings() {
                 {connectionTest.success && (
                   <>
                     <p className="mt-2 text-sm text-[#cbd5e1]">
-                      {t("settings.currentDatabase", { database: connectionTest.currentDatabase })}
+                      {t("settings.currentDatabase", {
+                        database: connectionTest.currentDatabase,
+                      })}
                     </p>
                     <p className="mt-1 text-sm text-[#cbd5e1]">
                       {t("settings.engineInfo", {
@@ -432,14 +508,34 @@ export function Settings() {
             </div>
           )}
 
-          <div className="rounded-2xl border border-[#27272a] bg-[#111116] p-6">
-            <h3 className="text-lg font-semibold text-white">{t("settings.notes")}</h3>
-            <ul className="mt-4 space-y-3 text-sm leading-6 text-[#a1a1aa]">
-              <li>{t("settings.note1")}</li>
-              <li>{t("settings.note2")}</li>
-              <li>{t("settings.note3")}</li>
-            </ul>
-          </div>
+          {openAiTest && (
+            <div className="rounded-2xl border border-[#27272a] bg-[#111116] p-6">
+              <h3 className="text-lg font-semibold text-white">{t("settings.openAiTestResult")}</h3>
+              <div
+                className={`mt-4 rounded-xl border p-4 ${
+                  openAiTest.success
+                    ? "border-[#10b981]/30 bg-[#10b981]/10"
+                    : "border-[#ef4444]/30 bg-[#ef4444]/10"
+                }`}
+              >
+                <p
+                  className={`text-sm font-medium ${
+                    openAiTest.success ? "text-[#34d399]" : "text-[#fca5a5]"
+                  }`}
+                >
+                  {openAiTest.message}
+                </p>
+                <p className="mt-2 text-sm text-[#cbd5e1]">
+                  {t("settings.responseTime", { ms: openAiTest.responseTimeMs })}
+                </p>
+                {openAiTest.success && (
+                  <p className="mt-1 text-sm text-[#cbd5e1]">
+                    {t("settings.availableModels", { count: openAiTest.modelCount })}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </section>
       </div>
     </div>
@@ -499,11 +595,11 @@ function FieldShell({
 }) {
   return (
     <div className={`rounded-2xl border border-[#27272a] bg-[#0a0a0f] p-4 ${className ?? ""}`}>
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
         <Label htmlFor={id} className="text-sm font-medium text-white">
           {label}
         </Label>
-        <span className="rounded-full border border-[#27272a] bg-[#111116] px-2.5 py-1 text-[11px] uppercase tracking-[0.18em] text-[#71717a]">
+        <span className="max-w-full break-all rounded-full border border-[#27272a] bg-[#111116] px-2.5 py-1 text-[11px] uppercase tracking-[0.18em] text-[#71717a]">
           {envName}
         </span>
       </div>
