@@ -25,4 +25,8 @@ public class AiAnalysisHistoryService {
         int safeLimit = limit == null ? 100 : Math.min(Math.max(limit, 1), 500);
         return repository.findByDbUrlAdmin(dbUrlAdmin, safeLimit);
     }
+
+    public int clearCurrentDatabaseHistory() {
+        return repository.deleteByDbUrlAdmin(dbUrlAdmin);
+    }
 }

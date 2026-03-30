@@ -104,6 +104,20 @@ public class AiAnalysisHistoryRepository {
         }
     }
 
+    public int deleteByDbUrlAdmin(String dbUrlAdmin) {
+        String sql = """
+                DELETE FROM ai_analysis_history
+                WHERE db_url_admin = ?
+                """;
+
+        try (Connection connection = openConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, dbUrlAdmin);
+            return statement.executeUpdate();
+        } catch (Exception ex) {
+            throw new IllegalStateException("Falha ao limpar histórico de análise IA.", ex);
+        }
+    }
+
     private Connection openConnection() throws Exception {
         return DriverManager.getConnection("jdbc:sqlite:" + sqlitePath());
     }

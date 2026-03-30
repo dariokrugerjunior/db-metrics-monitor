@@ -56,6 +56,7 @@ public class AiAnalysisService {
     private final HistoricalIncidentService historicalIncidentService;
     private final AiAnalysisHistoryService aiAnalysisHistoryService;
     private final AppProperties appProperties;
+    private final RuntimeConfigurationService runtimeConfigurationService;
     private final DatabaseHealthPromptBuilder databaseHealthPromptBuilder;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(20)).build();
@@ -67,7 +68,8 @@ public class AiAnalysisService {
         if (!appProperties.getAi().isEnabled()) {
             throw new BadRequestException("A analise IA esta desabilitada nesta aplicacao.");
         }
-        if (appProperties.getAi().getApiKey() == null || appProperties.getAi().getApiKey().isBlank()) {
+        if (runtimeConfigurationService.getEffectiveOpenAiApiKey() == null
+                || runtimeConfigurationService.getEffectiveOpenAiApiKey().isBlank()) {
             throw new BadRequestException("APP_OPENAI_API_KEY nao configurada no backend.");
         }
 
@@ -195,7 +197,7 @@ public class AiAnalysisService {
         try {
             String body = objectMapper.createObjectNode()
                     .put("model", appProperties.getAi().getModel())
-                    .put("max_output_tokens", appProperties.getAi().getMaxOutputTokens())
+                    .put("max_output_tokens", runtimeConfigurationService.getEffectiveOpenAiMaxOutputTokens())
                     .set("input", objectMapper.createArrayNode()
                             .add(objectMapper.createObjectNode()
                                     .put("role", "user")
@@ -207,7 +209,7 @@ public class AiAnalysisService {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(appProperties.getAi().getBaseUrl() + "/responses"))
-                    .header("Authorization", "Bearer " + appProperties.getAi().getApiKey())
+                    .header("Authorization", "Bearer " + runtimeConfigurationService.getEffectiveOpenAiApiKey())
                     .header("Content-Type", "application/json")
                     .timeout(Duration.ofSeconds(60))
                     .POST(HttpRequest.BodyPublishers.ofString(body))

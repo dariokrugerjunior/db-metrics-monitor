@@ -144,6 +144,14 @@ export interface HistoricalIncidentSummaryResponse {
   lockIncidents: number;
 }
 
+export interface HistoricalIncidentPageResponse {
+  items: HistoricalIncidentResponse[];
+  page: number;
+  size: number;
+  totalItems: number;
+  totalPages: number;
+}
+
 export interface AiAnalysisRequest {
   prompt: string;
 }
@@ -163,6 +171,41 @@ export interface AiAnalysisHistoryResponse {
   finalPrompt: string;
   analysis: string;
   createdAt: string;
+}
+
+export interface AppConfigurationResponse {
+  dbUrl: string;
+  dbUser: string;
+  dbPassword: string;
+  appOpenAiApiKey: string;
+  appOpenAiMaxOutputTokens: number;
+  activeDatasourceUrl: string;
+  databaseSettingsAppliedAtRuntime: boolean;
+  restartRequired: boolean;
+  savedAt: string | null;
+}
+
+export interface AppConfigurationUpdateRequest {
+  dbUrl: string;
+  dbUser: string;
+  dbPassword: string;
+  appOpenAiApiKey: string;
+  appOpenAiMaxOutputTokens: number;
+}
+
+export interface DatabaseConnectionTestRequest {
+  dbUrl: string;
+  dbUser: string;
+  dbPassword: string;
+}
+
+export interface DatabaseConnectionTestResponse {
+  success: boolean;
+  databaseProductName: string | null;
+  databaseVersion: string | null;
+  currentDatabase: string | null;
+  responseTimeMs: number;
+  message: string;
 }
 
 export type HealthClassification = "HEALTHY" | "WARNING" | "CRITICAL";

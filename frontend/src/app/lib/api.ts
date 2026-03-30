@@ -1,10 +1,15 @@
 import type {
+  AppConfigurationResponse,
+  AppConfigurationUpdateRequest,
   AiAnalysisHistoryResponse,
   AiAnalysisRequest,
   AiAnalysisResponse,
+  DatabaseConnectionTestRequest,
+  DatabaseConnectionTestResponse,
   DatabaseIntelligenceOverviewResponse,
   ConnectionSummaryResponse,
   DashboardSummaryResponse,
+  HistoricalIncidentPageResponse,
   HistoricalIncidentResponse,
   HistoricalIncidentSummaryResponse,
   LockInfoResponse,
@@ -60,6 +65,16 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     return undefined as T;
   }
 
+  const contentLength = response.headers.get("content-length");
+  if (contentLength === "0") {
+    return undefined as T;
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    return undefined as T;
+  }
+
   return response.json() as Promise<T>;
 }
 
@@ -86,7 +101,13 @@ export const api = {
     }),
   getHistoryIncidents: (limit = 200) =>
     request<HistoricalIncidentResponse[]>("/history/incidents", { params: { limit } }),
+  getHistoryIncidentsPage: (page = 1, size = 10) =>
+    request<HistoricalIncidentPageResponse>("/history/incidents/page", { params: { page, size } }),
   getHistorySummary: () => request<HistoricalIncidentSummaryResponse>("/history/summary"),
+  clearHistoryIncidents: () =>
+    request<void>("/history/incidents", {
+      method: "DELETE",
+    }),
   analyzeWithAi: (payload: AiAnalysisRequest) =>
     request<AiAnalysisResponse>("/ai/analysis", {
       method: "POST",
@@ -94,9 +115,24 @@ export const api = {
     }),
   getAiAnalysisHistory: (limit = 100) =>
     request<AiAnalysisHistoryResponse[]>("/ai/history", { params: { limit } }),
+  clearAiAnalysisHistory: () =>
+    request<void>("/ai/history", {
+      method: "DELETE",
+    }),
   getSystemMetrics: () => request<SystemMetricsResponse>("/system/metrics"),
   getDbIntelligenceOverview: () =>
     request<DatabaseIntelligenceOverviewResponse>("/db/intelligence/overview"),
+  getConfiguration: () => request<AppConfigurationResponse>("/configuration"),
+  updateConfiguration: (payload: AppConfigurationUpdateRequest) =>
+    request<AppConfigurationResponse>("/configuration", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  testDatabaseConnection: (payload: DatabaseConnectionTestRequest) =>
+    request<DatabaseConnectionTestResponse>("/configuration/database/test", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   terminateSession: (pid: number, reason = "Terminated from frontend dashboard") =>
     request<TerminateSessionResponse>(`/db/sessions/${pid}/terminate`, {
       method: "POST",

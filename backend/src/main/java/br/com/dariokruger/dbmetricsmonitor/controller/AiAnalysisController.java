@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,5 +36,11 @@ public class AiAnalysisController {
     @Operation(summary = "Lista histórico de análises IA filtrado pelo DB_URL_ADMIN atual")
     public List<AiAnalysisHistoryResponse> history(@RequestParam(required = false) Integer limit) {
         return aiAnalysisHistoryService.getCurrentDatabaseHistory(limit);
+    }
+
+    @DeleteMapping("/history")
+    @Operation(summary = "Remove o histórico de análises IA do DB_URL_ADMIN atual")
+    public void clearHistory() {
+        aiAnalysisHistoryService.clearCurrentDatabaseHistory();
     }
 }

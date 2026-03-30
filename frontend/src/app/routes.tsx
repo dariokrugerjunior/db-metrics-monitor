@@ -8,6 +8,7 @@ import { Overview } from "./pages/Overview";
 import { History } from "./pages/History";
 import { AiAnalysis } from "./pages/AiAnalysis";
 import { Intelligence } from "./pages/Intelligence";
+import { Settings } from "./pages/Settings";
 
 export const router = createBrowserRouter([
   {
@@ -22,6 +23,7 @@ export const router = createBrowserRouter([
       { path: "intelligence", Component: Intelligence },
       { path: "history", Component: History },
       { path: "ai-analysis", Component: AiAnalysis },
+      { path: "settings", Component: Settings },
     ],
   },
 ]);

@@ -108,6 +108,50 @@ public class HistoricalIncidentRepository {
         }
     }
 
+    public List<HistoricalIncidentResponse> findIncidentsPage(int limit, int offset) {
+        String sql = """
+                SELECT id, incident_type, severity, title, details, metric_value, metric_unit, source, reference_name, created_at
+                FROM historical_incidents
+                ORDER BY datetime(created_at) DESC, id DESC
+                LIMIT ?
+                OFFSET ?
+                """;
+
+        try (Connection connection = openConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, limit);
+            statement.setInt(2, offset);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<HistoricalIncidentResponse> incidents = new ArrayList<>();
+                while (rs.next()) {
+                    incidents.add(mapIncident(rs));
+                }
+                return incidents;
+            }
+        } catch (Exception ex) {
+            throw new IllegalStateException("Falha ao paginar incidentes historicos.", ex);
+        }
+    }
+
+    public long countIncidents() {
+        String sql = "SELECT COUNT(*) AS total FROM historical_incidents";
+
+        try (Connection connection = openConnection(); Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery(sql)) {
+            return rs.next() ? rs.getLong("total") : 0L;
+        } catch (Exception ex) {
+            throw new IllegalStateException("Falha ao contar incidentes historicos.", ex);
+        }
+    }
+
+    public int deleteAllIncidents() {
+        String sql = "DELETE FROM historical_incidents";
+
+        try (Connection connection = openConnection(); Statement statement = connection.createStatement()) {
+            return statement.executeUpdate(sql);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Falha ao limpar incidentes historicos.", ex);
+        }
+    }
+
     public HistoricalIncidentSummaryResponse summarize() {
         return summarizeSince(null);
     }
