@@ -2,6 +2,13 @@ import { RouterProvider } from "react-router";
 import { router } from "./routes";
 import { Toaster } from "./components/ui/sonner";
 import { useEffect } from "react";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ConnectPage } from "./pages/ConnectPage";
+
+function AppContent() {
+  const { isConnected } = useAuth();
+  return isConnected ? <RouterProvider router={router} /> : <ConnectPage />;
+}
 
 export default function App() {
   useEffect(() => {
@@ -10,9 +17,9 @@ export default function App() {
   }, []);
 
   return (
-    <>
-      <RouterProvider router={router} />
+    <AuthProvider>
+      <AppContent />
       <Toaster />
-    </>
+    </AuthProvider>
   );
 }

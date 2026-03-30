@@ -208,6 +208,33 @@ export interface DatabaseConnectionTestResponse {
   message: string;
 }
 
+export interface OpenAiConnectionTestRequest {
+  apiKey: string;
+}
+
+export interface OpenAiConnectionTestResponse {
+  success: boolean;
+  modelCount: number;
+  responseTimeMs: number;
+  message: string;
+}
+
+export interface DatabaseAuthRequest {
+  dbUrl: string;
+  dbUser: string;
+  dbPassword: string;
+}
+
+export interface DatabaseAuthResponse {
+  connected: boolean;
+  dbUrl: string;
+  databaseProductName: string | null;
+  databaseVersion: string | null;
+  currentDatabase: string | null;
+  responseTimeMs: number;
+  message: string;
+}
+
 export type HealthClassification = "HEALTHY" | "WARNING" | "CRITICAL";
 export type AlertSeverity = "INFO" | "WARNING" | "CRITICAL";
 export type RecommendationPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";

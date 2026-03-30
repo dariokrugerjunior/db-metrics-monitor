@@ -4,6 +4,8 @@ import br.com.dariokruger.dbmetricsmonitor.dto.AppConfigurationResponse;
 import br.com.dariokruger.dbmetricsmonitor.dto.AppConfigurationUpdateRequest;
 import br.com.dariokruger.dbmetricsmonitor.dto.DatabaseConnectionTestRequest;
 import br.com.dariokruger.dbmetricsmonitor.dto.DatabaseConnectionTestResponse;
+import br.com.dariokruger.dbmetricsmonitor.dto.OpenAiConnectionTestRequest;
+import br.com.dariokruger.dbmetricsmonitor.dto.OpenAiConnectionTestResponse;
 import br.com.dariokruger.dbmetricsmonitor.service.RuntimeConfigurationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,5 +42,11 @@ public class ConfigurationController {
     @Operation(summary = "Testa uma conexao PostgreSQL sem alterar o datasource atual")
     public DatabaseConnectionTestResponse testDatabaseConnection(@Valid @RequestBody DatabaseConnectionTestRequest request) {
         return runtimeConfigurationService.testConnection(request);
+    }
+
+    @PostMapping("/openai/test")
+    @Operation(summary = "Testa a autenticacao da OpenAI sem alterar a configuracao atual")
+    public OpenAiConnectionTestResponse testOpenAiConnection(@Valid @RequestBody OpenAiConnectionTestRequest request) {
+        return runtimeConfigurationService.testOpenAiConnection(request);
     }
 }
