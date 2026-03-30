@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: prod-valoriza-postgres
+    environment:
+      POSTGRES_DB: observability
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements"
+      - "-c"
+      - "pg_stat_statements.track=all"
+    ports:
+      - "5432:5432"
+    volumes:
+      - prod_valoriza_postgres_data:/var/lib/postgresql/data
+      - ./backend/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d observability"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - prod-valoriza
+
+  backend:
+    build:
+      context: ./backend
+    container_name: prod-valoriza-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL_ADMIN: jdbc:postgresql://postgres:5432/observability
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      APP_API_KEY: change-me
+      APP_API_KEY_HEADER: X-API-KEY
+      APP_PROTECT_READ_ENDPOINTS: "true"
+      APP_HISTORY_SQLITE_PATH: /app/data/db-metrics-history.db
+      DB_INTELLIGENCE_ENVIRONMENT: prod-valoriza
+    ports:
+      - "8080:8080"
+    volumes:
+      - prod_valoriza_app_data:/app/data
+    restart: unless-stopped
+    networks:
+      - prod-valoriza
+
+  frontend:
+    image: node:20-alpine
+    container_name: prod-valoriza-frontend
+    working_dir: /workspace
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE_URL: /api/v1
+      VITE_API_KEY_HEADER: X-API-KEY
+      VITE_API_KEY: change-me
+    command: sh -c "npm ci && npm run build && npm exec vite preview -- --host 0.0.0.0 --port 4173"
+    ports:
+      - "4173:4173"
+    volumes:
+      - ./frontend:/workspace:ro
+      - prod_frontend_node_modules:/workspace/node_modules
+    restart: unless-stopped
+    networks:
+      - prod-valoriza
+
+volumes:
+  prod_valoriza_postgres_data:
+  prod_valoriza_app_data:
+  prod_frontend_node_modules:
+
+networks:
+  prod-valoriza:
+    name: prod-valoriza

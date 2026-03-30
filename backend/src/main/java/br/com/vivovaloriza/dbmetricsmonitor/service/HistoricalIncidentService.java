@@ -2,6 +2,7 @@ package br.com.vivovaloriza.dbmetricsmonitor.service;
 
 import br.com.vivovaloriza.dbmetricsmonitor.config.AppProperties;
 import br.com.vivovaloriza.dbmetricsmonitor.dto.DashboardSummaryResponse;
+import br.com.vivovaloriza.dbmetricsmonitor.dto.HistoricalIncidentPageResponse;
 import br.com.vivovaloriza.dbmetricsmonitor.dto.HistoricalIncidentResponse;
 import br.com.vivovaloriza.dbmetricsmonitor.dto.HistoricalIncidentSummaryResponse;
 import br.com.vivovaloriza.dbmetricsmonitor.dto.LockInfoResponse;
@@ -74,8 +75,29 @@ public class HistoricalIncidentService {
         return repository.findRecentIncidents(Math.min(Math.max(safeLimit, 1), 1000));
     }
 
+    public HistoricalIncidentPageResponse getIncidentsPage(Integer page, Integer size) {
+        int safePage = page == null ? 1 : Math.max(page, 1);
+        int safeSize = size == null ? 10 : Math.min(Math.max(size, 1), 100);
+        long totalItems = repository.countIncidents();
+        int totalPages = totalItems == 0 ? 1 : (int) Math.ceil(totalItems / (double) safeSize);
+        int normalizedPage = Math.min(safePage, totalPages);
+        int offset = (normalizedPage - 1) * safeSize;
+
+        return new HistoricalIncidentPageResponse(
+                repository.findIncidentsPage(safeSize, offset),
+                normalizedPage,
+                safeSize,
+                totalItems,
+                totalPages
+        );
+    }
+
     public HistoricalIncidentSummaryResponse getSummary() {
         return repository.summarize();
+    }
+
+    public int clearHistory() {
+        return repository.deleteAllIncidents();
     }
 
     public HistoricalIncidentSummaryResponse getSummaryLast24Hours() {

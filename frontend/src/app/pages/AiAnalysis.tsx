@@ -1,8 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
-import { Bot, Eye, MessageSquareText, Send, ShieldAlert } from "lucide-react";
+import { Bot, Eye, MessageSquareText, Send, ShieldAlert, Trash2 } from "lucide-react";
 import { DataTable, Column } from "../components/DataTable";
 import { StatusBanner } from "../components/StatusBanner";
 import { Button } from "../components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -23,13 +33,15 @@ export function AiAnalysis() {
   const [analysis, setAnalysis] = useState<AiAnalysisResponse | null>(null);
   const [history, setHistory] = useState<AiAnalysisHistoryResponse[]>([]);
   const [selectedHistory, setSelectedHistory] = useState<AiAnalysisHistoryResponse | null>(null);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [clearingHistory, setClearingHistory] = useState(false);
 
   const loadHistory = useCallback(async () => {
     try {
       const rows = await api.getAiAnalysisHistory(100);
       setHistory(rows);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao carregar histórico de IA.");
+      setError(err instanceof Error ? err.message : "Falha ao carregar historico de IA.");
     }
   }, []);
 
@@ -46,6 +58,21 @@ export function AiAnalysis() {
       setLoading(false);
     }
   }, [loadHistory, prompt]);
+
+  const clearHistory = useCallback(async () => {
+    setClearingHistory(true);
+    setError(null);
+    try {
+      await api.clearAiAnalysisHistory();
+      setHistory([]);
+      setSelectedHistory(null);
+      setClearDialogOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao limpar historico de IA.");
+    } finally {
+      setClearingHistory(false);
+    }
+  }, []);
 
   usePageRefresh(
     useCallback(() => {
@@ -90,7 +117,7 @@ export function AiAnalysis() {
           className="text-[#3b82f6] hover:bg-[#3b82f6]/10 hover:text-[#3b82f6]"
         >
           <Eye className="mr-2 h-4 w-4" />
-          Ver informações
+          Ver informacoes
         </Button>
       ),
     },
@@ -106,15 +133,15 @@ export function AiAnalysis() {
                 <Bot className="h-6 w-6 text-[#3b82f6]" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-white">Análise IA</h2>
+                <h2 className="text-xl font-semibold text-white">Analise IA</h2>
                 <p className="text-sm text-[#a1a1aa]">
-                  Envia o snapshot atual do banco para a OpenAI e retorna um parecer operacional em português.
+                  Envia o snapshot atual do banco para a OpenAI e retorna um parecer operacional em portugues.
                 </p>
               </div>
             </div>
           </div>
           <div className="rounded-lg border border-[#f59e0b]/30 bg-[#f59e0b]/10 px-4 py-3 text-sm text-[#f59e0b]">
-            O histórico exibido abaixo é filtrado pelo DB_URL_ADMIN atual.
+            O historico exibido abaixo e filtrado pelo DB_URL_ADMIN atual.
           </div>
         </div>
       </div>
@@ -122,8 +149,8 @@ export function AiAnalysis() {
       {loading && (
         <StatusBanner
           status="info"
-          title="Análise em andamento"
-          description="Se já existir outra análise rodando para este banco, esta requisição vai aguardar a anterior terminar antes de iniciar."
+          title="Analise em andamento"
+          description="Se ja existir outra analise rodando para este banco, esta requisicao vai aguardar a anterior terminar antes de iniciar."
         />
       )}
 
@@ -137,12 +164,12 @@ export function AiAnalysis() {
         <Textarea
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
-          placeholder="Ex.: verifique se existe risco de saturação por conexões, locks ou queries lentas."
+          placeholder="Ex.: verifique se existe risco de saturacao por conexoes, locks ou queries lentas."
           className="min-h-36 border-[#27272a] bg-[#0a0a0f] text-white"
         />
         <div className="mt-4 flex items-center justify-between">
           <p className="text-sm text-[#71717a]">
-            Se você deixar vazio, a IA usa apenas o contexto operacional coletado pelo backend.
+            Se voce deixar vazio, a IA usa apenas o contexto operacional coletado pelo backend.
           </p>
           <Button
             type="button"
@@ -160,7 +187,7 @@ export function AiAnalysis() {
         <InsightCard
           title="Fonte"
           value="OpenAI API"
-          description="Análise baseada no snapshot atual do banco e histórico local."
+          description="Analise baseada no snapshot atual do banco e historico local."
           icon={<Bot className="h-5 w-5 text-[#3b82f6]" />}
         />
         <InsightCard
@@ -170,9 +197,9 @@ export function AiAnalysis() {
           icon={<MessageSquareText className="h-5 w-5 text-[#10b981]" />}
         />
         <InsightCard
-          title="Última análise"
+          title="Ultima analise"
           value={analysis ? formatRelativeTimestamp(analysis.generatedAt) : "N/A"}
-          description="Resultado mais recente gerado pela integração."
+          description="Resultado mais recente gerado pela integracao."
           icon={<ShieldAlert className="h-5 w-5 text-[#f59e0b]" />}
         />
       </div>
@@ -181,13 +208,13 @@ export function AiAnalysis() {
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">Resposta da IA</h3>
           <span className="text-xs text-[#71717a]">
-            {error ? "Erro" : analysis ? "Atualizado" : "Ainda não executado"}
+            {error ? "Erro" : analysis ? "Atualizado" : "Ainda nao executado"}
           </span>
         </div>
 
         {error ? (
           <div className="rounded-lg border border-[#ef4444]/30 bg-[#ef4444]/10 p-4">
-            <p className="text-sm font-medium text-[#ef4444]">Não foi possível obter a resposta da IA.</p>
+            <p className="text-sm font-medium text-[#ef4444]">Nao foi possivel obter a resposta da IA.</p>
             <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-[#f5b4b4]">{error}</p>
           </div>
         ) : analysis ? (
@@ -213,8 +240,21 @@ export function AiAnalysis() {
 
       <div className="rounded-lg border border-[#27272a] bg-[#111116] p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-white">Histórico de chats IA</h3>
-          <span className="text-xs text-[#71717a]">Apenas do DB_URL_ADMIN atual</span>
+          <h3 className="text-lg font-semibold text-white">Historico de chats IA</h3>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-[#71717a]">Apenas do DB_URL_ADMIN atual</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setClearDialogOpen(true)}
+              disabled={history.length === 0 || clearingHistory}
+              className="border-[#ef4444]/30 text-[#fca5a5] hover:bg-[#ef4444]/10 hover:text-[#fecaca]"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              {clearingHistory ? "Limpando..." : "Limpar historico"}
+            </Button>
+          </div>
         </div>
         <DataTable
           data={history}
@@ -228,7 +268,7 @@ export function AiAnalysis() {
           <DialogHeader>
             <DialogTitle>Detalhes do chat IA</DialogTitle>
             <DialogDescription className="text-[#a1a1aa]">
-              Histórico salvo para o DB_URL_ADMIN atual em {selectedHistory ? formatRelativeTimestamp(selectedHistory.createdAt) : ""}
+              Historico salvo para o DB_URL_ADMIN atual em {selectedHistory ? formatRelativeTimestamp(selectedHistory.createdAt) : ""}
             </DialogDescription>
           </DialogHeader>
 
@@ -240,6 +280,28 @@ export function AiAnalysis() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+        <AlertDialogContent className="border-[#27272a] bg-[#111116] text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar historico de IA</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#a1a1aa]">
+              Esta acao remove permanentemente todas as analises salvas para o DB_URL_ADMIN atual.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-[#27272a] bg-[#0a0a0f] text-white hover:bg-[#1f1f28]">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void clearHistory()}
+              className="bg-[#ef4444] text-white hover:bg-[#dc2626]"
+            >
+              Apagar historico
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

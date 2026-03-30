@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: dev-valoriza-postgres
+    environment:
+      POSTGRES_DB: observability
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements"
+      - "-c"
+      - "pg_stat_statements.track=all"
+    ports:
+      - "5432:5432"
+    volumes:
+      - dev_valoriza_postgres_data:/var/lib/postgresql/data
+      - ./backend/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d observability"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - dev-valoriza
+
+  backend:
+    image: maven:3.9.9-eclipse-temurin-21
+    container_name: dev-valoriza-backend
+    working_dir: /workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL_ADMIN: jdbc:postgresql://postgres:5432/observability
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      APP_API_KEY: public-dev-key
+      APP_API_KEY_HEADER: X-API-KEY
+      APP_PROTECT_READ_ENDPOINTS: "false"
+      APP_HISTORY_SQLITE_PATH: /workspace/data/db-metrics-history.db
+      DB_INTELLIGENCE_ENVIRONMENT: dev-valoriza
+    command: mvn spring-boot:run
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend:/workspace
+      - backend_m2_cache:/root/.m2
+    networks:
+      - dev-valoriza
+
+  frontend:
+    image: node:20-alpine
+    container_name: dev-valoriza-frontend
+    working_dir: /workspace
+    depends_on:
+      - backend
+    environment:
+      VITE_DEV_API_TARGET: http://backend:8080
+      VITE_API_BASE_URL: /api/v1
+      VITE_API_KEY_HEADER: X-API-KEY
+      VITE_API_KEY: public-dev-key
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/workspace
+      - frontend_node_modules:/workspace/node_modules
+    networks:
+      - dev-valoriza
+
+volumes:
+  dev_valoriza_postgres_data:
+  backend_m2_cache:
+  frontend_node_modules:
+
+networks:
+  dev-valoriza:
+    name: dev-valoriza

@@ -9,7 +9,8 @@ import {
   Bot,
   History as HistoryIcon,
   Database,
-  Circle
+  Circle,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { cn } from "./ui/utils";
 import { LiveActivityIndicator } from "./LiveActivityIndicator";
@@ -23,6 +24,7 @@ const navigation = [
   { name: "Connections", href: "/connections", icon: Cable },
   { name: "History", href: "/history", icon: HistoryIcon },
   { name: "Analise IA", href: "/ai-analysis", icon: Bot },
+  { name: "Configuracao", href: "/settings", icon: SettingsIcon },
 ];
 
 export function MainLayout() {
