@@ -1,4 +1,5 @@
 import { useCallback, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { MetricCard } from "../components/MetricCard";
 import { DataTable, Column } from "../components/DataTable";
 import { StatusBadge } from "../components/StatusBadge";
@@ -80,15 +81,16 @@ type Alert = {
   category: string;
 };
 
-function mapAlerts(data: DashboardSummaryResponse): Alert[] {
+function useAlerts(data: DashboardSummaryResponse): Alert[] {
+  const { t } = useTranslation();
   const alerts: Alert[] = [];
 
   if (data.database.locks.blocked > 0) {
     alerts.push({
       id: 1,
       severity: "critical",
-      message: `${data.database.locks.blocked} sessão(ões) bloqueadas no PostgreSQL`,
-      timestamp: "agora",
+      message: t("overview.alertBlocked", { count: data.database.locks.blocked }),
+      timestamp: t("overview.agora"),
       category: "Locks",
     });
   }
@@ -97,8 +99,8 @@ function mapAlerts(data: DashboardSummaryResponse): Alert[] {
     alerts.push({
       id: 2,
       severity: "warning",
-      message: `${data.database.runningQueries.total} query(s) em execução acima do threshold`,
-      timestamp: "agora",
+      message: t("overview.alertRunningQueries", { count: data.database.runningQueries.total }),
+      timestamp: t("overview.agora"),
       category: "Queries",
     });
   }
@@ -107,8 +109,8 @@ function mapAlerts(data: DashboardSummaryResponse): Alert[] {
     alerts.push({
       id: 3,
       severity: "info",
-      message: "Nenhum alerta crítico no snapshot atual",
-      timestamp: "agora",
+      message: t("overview.noAlertsCritical"),
+      timestamp: t("overview.agora"),
       category: "Overview",
     });
   }
@@ -117,6 +119,7 @@ function mapAlerts(data: DashboardSummaryResponse): Alert[] {
 }
 
 export function Overview() {
+  const { t } = useTranslation();
   const { data, loading, error, refresh } = useApiPolling(api.getDashboardSummary, {
     initialData: emptySummary,
     intervalMs: 15000,
@@ -128,7 +131,7 @@ export function Overview() {
     }, [refresh]),
   );
 
-  const activeAlerts = mapAlerts(data);
+  const activeAlerts = useAlerts(data);
   const criticalLocks = data.database.runningQueries.queries.slice(0, 5);
   const slowQueries = data.database.topQueries.filter((query) => query.meanExecTime >= 250).slice(0, 5);
   const databaseSettings = data.database.settings;
@@ -136,7 +139,7 @@ export function Overview() {
   const alertColumns: Column<Alert>[] = [
     {
       key: "severity",
-      header: "Severity",
+      header: t("overview.alertSeverity"),
       render: (row) => {
         const icons = {
           critical: <AlertTriangle className="h-4 w-4 text-[#ef4444]" />,
@@ -149,7 +152,7 @@ export function Overview() {
     },
     {
       key: "message",
-      header: "Message",
+      header: t("overview.alertMessage"),
       render: (row) => (
         <div>
           <p className="text-sm text-white">{row.message}</p>
@@ -157,26 +160,26 @@ export function Overview() {
         </div>
       ),
     },
-    { key: "timestamp", header: "Time", sortable: true },
+    { key: "timestamp", header: t("overview.alertTime"), sortable: true },
   ];
 
   const lockColumns: Column<RunningQueryResponse>[] = [
     { key: "pid", header: "PID", sortable: true },
-    { key: "database", header: "Database" },
+    { key: "database", header: t("common.database") },
     {
       key: "duration",
-      header: "Duration",
+      header: t("common.duration"),
       sortable: true,
       render: (row) => formatDuration(row.duration),
     },
     {
       key: "query",
-      header: "Query",
+      header: t("common.query"),
       render: (row) => <span className="font-mono text-xs text-[#a1a1aa]">{row.query}</span>,
     },
     {
       key: "status",
-      header: "Status",
+      header: t("common.status"),
       render: () => <StatusBadge status="warning" label="Running" />,
     },
   ];
@@ -184,19 +187,19 @@ export function Overview() {
   const queryColumns: Column<TopQueryResponse>[] = [
     {
       key: "query",
-      header: "Query",
+      header: t("common.query"),
       render: (row) => <span className="font-mono text-xs text-[#a1a1aa]">{row.query}</span>,
     },
     {
       key: "meanExecTime",
-      header: "Avg Time",
+      header: t("dashboard.avgTime"),
       sortable: true,
       render: (row) => `${row.meanExecTime.toFixed(2)}ms`,
     },
-    { key: "calls", header: "Executions", sortable: true },
+    { key: "calls", header: t("dashboard.executions"), sortable: true },
     {
       key: "status",
-      header: "Status",
+      header: t("common.status"),
       render: (row) => <StatusBadge status={row.meanExecTime >= 1000 ? "critical" : "warning"} />,
     },
   ];
@@ -205,82 +208,85 @@ export function Overview() {
 
   return (
     <div className="space-y-6">
-      {error && <StatusBanner status="error" title="Falha ao carregar overview" description={error} />}
+      {error && <StatusBanner status="error" title={t("overview.errorBanner")} description={error} />}
 
       <StatusBanner
         status={overallStatus}
-        title={overallStatus === "success" ? "System Status: Healthy" : "System Status: Warning"}
+        title={overallStatus === "success" ? t("overview.statusHealthy") : t("overview.statusWarning")}
         description={
           loading
-            ? "Carregando snapshot consolidado."
-            : `${activeAlerts.length} alerta(s) ativos. Uptime atual: ${Math.floor(data.application.uptimeSeconds / 3600)}h.`
+            ? t("overview.loadingSnapshot")
+            : t("overview.alertsSuffix", {
+                count: activeAlerts.length,
+                hours: Math.floor(data.application.uptimeSeconds / 3600),
+              })
         }
       />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard title="Total Connections" value={data.database.connections.totalConnections} change="Snapshot atual" changeType="neutral" icon={Cable} status="healthy" />
-        <MetricCard title="Active Connections" value={data.database.connections.activeConnections} change="Conexões utilizáveis" changeType="positive" icon={Activity} status="healthy" />
-        <MetricCard title="Active Locks" value={data.database.locks.total} change={`${data.database.locks.blocked} bloqueadas`} changeType={data.database.locks.blocked > 0 ? "negative" : "positive"} icon={Lock} status={data.database.locks.blocked > 0 ? "warning" : "healthy"} />
-        <MetricCard title="Running Queries" value={data.database.runningQueries.total} change="Threshold do backend" changeType="neutral" icon={Code2} status="healthy" />
+        <MetricCard title={t("overview.totalConnections")} value={data.database.connections.totalConnections} change={t("overview.currentSnapshot")} changeType="neutral" icon={Cable} status="healthy" />
+        <MetricCard title={t("overview.activeConnections")} value={data.database.connections.activeConnections} change={t("overview.usableConnections")} changeType="positive" icon={Activity} status="healthy" />
+        <MetricCard title={t("overview.activeLocks")} value={data.database.locks.total} change={t("overview.blockedCount", { count: data.database.locks.blocked })} changeType={data.database.locks.blocked > 0 ? "negative" : "positive"} icon={Lock} status={data.database.locks.blocked > 0 ? "warning" : "healthy"} />
+        <MetricCard title={t("overview.runningQueries")} value={data.database.runningQueries.total} change={t("overview.backendThreshold")} changeType="neutral" icon={Code2} status="healthy" />
       </div>
 
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Active Alerts</h2>
-          <span className="text-xs text-[#71717a]">Atualizado continuamente</span>
+          <h2 className="text-lg font-semibold text-white">{t("overview.activeAlerts")}</h2>
+          <span className="text-xs text-[#71717a]">{t("overview.updatedContinuously")}</span>
         </div>
-        <DataTable data={activeAlerts} columns={alertColumns} emptyMessage="Sem alertas ativos" />
+        <DataTable data={activeAlerts} columns={alertColumns} emptyMessage={t("overview.noAlerts")} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">Critical Locks</h2>
-            <StatusBadge status="warning" label={`${criticalLocks.length} Active`} />
+            <h2 className="text-lg font-semibold text-white">{t("overview.criticalLocks")}</h2>
+            <StatusBadge status="warning" label={t("overview.activeLabel", { count: criticalLocks.length })} />
           </div>
           <DataTable
             data={criticalLocks}
             columns={lockColumns}
-            emptyMessage={loading ? "Carregando locks..." : "Nenhum lock crítico"}
+            emptyMessage={loading ? t("overview.loadingLocks") : t("overview.noCriticalLocks")}
           />
         </div>
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">Slow Queries</h2>
-            <StatusBadge status={slowQueries.length > 0 ? "critical" : "healthy"} label={`${slowQueries.length} Queries`} />
+            <h2 className="text-lg font-semibold text-white">{t("overview.slowQueries")}</h2>
+            <StatusBadge status={slowQueries.length > 0 ? "critical" : "healthy"} label={t("overview.queriesLabel", { count: slowQueries.length })} />
           </div>
           <DataTable
             data={slowQueries}
             columns={queryColumns}
-            emptyMessage={loading ? "Carregando queries..." : "Nenhuma slow query"}
+            emptyMessage={loading ? t("overview.loadingQueries") : t("overview.noSlowQueries")}
           />
         </div>
       </div>
 
       <div className="rounded-lg border border-[#27272a] bg-[#111116] p-5">
-        <h2 className="mb-4 text-lg font-semibold text-white">Application Status</h2>
+        <h2 className="mb-4 text-lg font-semibold text-white">{t("overview.applicationStatus")}</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatusItem label="Database" status={data.database.status} icon={<CheckCircle className="h-5 w-5 text-[#10b981]" />} />
+          <StatusItem label={t("common.database")} status={data.database.status} icon={<CheckCircle className="h-5 w-5 text-[#10b981]" />} />
           <StatusItem
-            label="Connection Pool"
+            label={t("overview.connectionPool")}
             status={`${data.database.connections.totalConnections}/${data.database.connections.maxConnections}`}
             icon={<CheckCircle className="h-5 w-5 text-[#10b981]" />}
           />
           <StatusItem
-            label="Query Performance"
-            status={slowQueries.length > 0 ? "Warning" : "Healthy"}
+            label={t("overview.queryPerformance")}
+            status={slowQueries.length > 0 ? t("common.warning") : t("common.healthy")}
             icon={slowQueries.length > 0 ? <AlertTriangle className="h-5 w-5 text-[#f59e0b]" /> : <CheckCircle className="h-5 w-5 text-[#10b981]" />}
           />
           <StatusItem
-            label="Running Queries"
-            status={loading ? "Loading" : String(data.database.runningQueries.total)}
+            label={t("overview.runningQueries")}
+            status={loading ? t("overview.loading") : String(data.database.runningQueries.total)}
             icon={data.database.runningQueries.total > 0 ? <AlertTriangle className="h-5 w-5 text-[#f59e0b]" /> : <CheckCircle className="h-5 w-5 text-[#10b981]" />}
           />
         </div>
       </div>
 
       <div className="rounded-lg border border-[#27272a] bg-[#111116] p-5">
-        <h2 className="mb-4 text-lg font-semibold text-white">Database Settings</h2>
+        <h2 className="mb-4 text-lg font-semibold text-white">{t("overview.databaseSettings")}</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {databaseSettings.map((setting) => (
             <DatabaseSettingItem key={setting.name} setting={setting} />
@@ -312,44 +318,30 @@ function StatusItem({
 }
 
 function DatabaseSettingItem({ setting }: { setting: DatabaseSettingResponse }) {
-  const config = databaseSettingConfig[setting.name] ?? {
-    label: setting.name,
-    description: "Parâmetro retornado diretamente pelo pg_settings.",
+  const { t } = useTranslation();
+
+  const settingConfigMap: Record<string, { labelKey: string; descKey: string }> = {
+    effective_cache_size: { labelKey: "overview.effectiveCacheSize", descKey: "overview.effectiveCacheSizeDesc" },
+    maintenance_work_mem: { labelKey: "overview.maintenanceWorkMem", descKey: "overview.maintenanceWorkMemDesc" },
+    max_connections: { labelKey: "overview.maxConnections", descKey: "overview.maxConnectionsDesc" },
+    shared_buffers: { labelKey: "overview.sharedBuffers", descKey: "overview.sharedBuffersDesc" },
+    work_mem: { labelKey: "overview.workMem", descKey: "overview.workMemDesc" },
   };
+
+  const keys = settingConfigMap[setting.name];
+  const label = keys ? t(keys.labelKey) : setting.name;
+  const description = keys ? t(keys.descKey) : t("overview.dbSettingDefaultDesc");
 
   return (
     <div className="rounded-xl border border-[#27272a] bg-gradient-to-br from-[#111116] to-[#0a0a0f] p-5">
-      <p className="text-[11px] uppercase tracking-[0.18em] text-[#71717a]">{config.label}</p>
+      <p className="text-[11px] uppercase tracking-[0.18em] text-[#71717a]">{label}</p>
       <p className="mt-3 text-2xl font-semibold text-white">
         {formatDatabaseSettingValue(setting)}
       </p>
-      <p className="mt-3 text-sm leading-6 text-[#a1a1aa]">{config.description}</p>
+      <p className="mt-3 text-sm leading-6 text-[#a1a1aa]">{description}</p>
     </div>
   );
 }
-
-const databaseSettingConfig: Record<string, { label: string; description: string }> = {
-  effective_cache_size: {
-    label: "Effective Cache Size",
-    description: "Estimativa de memória disponível para cache de dados usada pelo otimizador de consultas.",
-  },
-  maintenance_work_mem: {
-    label: "Maintenance Work Mem",
-    description: "Memória usada por operações de manutenção como VACUUM, CREATE INDEX e ALTER TABLE.",
-  },
-  max_connections: {
-    label: "Max Connections",
-    description: "Quantidade máxima de conexões simultâneas permitidas no PostgreSQL.",
-  },
-  shared_buffers: {
-    label: "Shared Buffers",
-    description: "Memória principal reservada pelo PostgreSQL para cache de páginas de dados.",
-  },
-  work_mem: {
-    label: "Work Mem",
-    description: "Memória disponível por operação para sorts, hashes e execuções intermediárias de query.",
-  },
-};
 
 function formatDatabaseSettingValue(setting: DatabaseSettingResponse) {
   const numericValue = Number(setting.setting);

@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AlertTriangle, Cpu, DatabaseZap, HardDrive, Trash2 } from "lucide-react";
 import { DataTable, Column } from "../components/DataTable";
 import { MetricCard } from "../components/MetricCard";
@@ -52,6 +53,7 @@ const emptyPage: HistoricalIncidentPageResponse = {
 };
 
 export function History() {
+  const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [clearing, setClearing] = useState(false);
@@ -84,33 +86,33 @@ export function History() {
   const columns: Column<HistoricalIncidentResponse>[] = [
     {
       key: "createdAt",
-      header: "Momento",
+      header: t("history.moment"),
       sortable: true,
       render: (row) => formatRelativeTimestamp(row.createdAt),
     },
     {
       key: "incidentType",
-      header: "Tipo",
+      header: t("history.type"),
       sortable: true,
-      render: (row) => <span className="font-medium text-white">{incidentTypeLabel(row.incidentType)}</span>,
+      render: (row) => <span className="font-medium text-white">{incidentTypeLabel(row.incidentType, t)}</span>,
     },
     {
       key: "title",
-      header: "Evento",
+      header: t("history.event"),
       render: (row) => (
         <div>
           <p className="text-sm text-white">{row.title}</p>
-          <p className="mt-1 text-xs text-[#71717a]">{row.details ?? "Sem detalhes adicionais"}</p>
+          <p className="mt-1 text-xs text-[#71717a]">{row.details ?? t("common.noDetails")}</p>
         </div>
       ),
     },
     {
       key: "metricValue",
-      header: "Valor",
+      header: t("history.value"),
       sortable: true,
       render: (row) => {
         if (row.metricValue == null) {
-          return "N/A";
+          return t("common.na");
         }
 
         if (row.metricUnit === "%") {
@@ -122,13 +124,13 @@ export function History() {
     },
     {
       key: "referenceName",
-      header: "Referencia",
-      render: (row) => row.referenceName ?? "N/A",
+      header: t("history.reference"),
+      render: (row) => row.referenceName ?? t("common.na"),
     },
     {
       key: "severity",
-      header: "Status",
-      render: (row) => <StatusBadge status={mapSeverity(row.severity)} label={severityLabel(row.severity)} />,
+      header: t("history.status"),
+      render: (row) => <StatusBadge status={mapSeverity(row.severity)} label={severityLabel(row.severity, t)} />,
     },
   ];
 
@@ -148,27 +150,27 @@ export function History() {
 
   return (
     <div className="space-y-6">
-      {error && <StatusBanner status="error" title="Falha ao carregar historico" description={error} />}
+      {error && <StatusBanner status="error" title={t("history.errorBanner")} description={error} />}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard title="Total Incidents" value={data.summary.totalIncidents} change="Persistidos localmente" changeType="neutral" icon={AlertTriangle} status="warning" />
-        <MetricCard title="CPU > 60%" value={data.summary.cpuIncidents} change="Snapshots acima do threshold" changeType="warning" icon={Cpu} status="warning" />
-        <MetricCard title="Memory > 60%" value={data.summary.memoryIncidents} change="Snapshots acima do threshold" changeType="warning" icon={HardDrive} status="warning" />
-        <MetricCard title="Blocking Locks" value={data.summary.lockIncidents} change="Locks com tabela bloqueada" changeType="negative" icon={DatabaseZap} status="critical" />
+        <MetricCard title={t("history.totalIncidents")} value={data.summary.totalIncidents} change={t("history.storedLocally")} changeType="neutral" icon={AlertTriangle} status="warning" />
+        <MetricCard title={t("history.cpuAbove60")} value={data.summary.cpuIncidents} change={t("history.snapshotsAboveThreshold")} changeType="warning" icon={Cpu} status="warning" />
+        <MetricCard title={t("history.memoryAbove60")} value={data.summary.memoryIncidents} change={t("history.snapshotsAboveThreshold")} changeType="warning" icon={HardDrive} status="warning" />
+        <MetricCard title={t("history.blockingLocks")} value={data.summary.lockIncidents} change={t("history.locksWithBlocking")} changeType="negative" icon={DatabaseZap} status="critical" />
       </div>
 
       <div className="rounded-lg border border-[#27272a] bg-[#111116] p-5">
         <div className="mb-4 flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-white">Incidentes historicos</h2>
+            <h2 className="text-lg font-semibold text-white">{t("history.historicalIncidents")}</h2>
             <p className="text-sm text-[#71717a]">
-              Registros capturados pelo scheduler quando CPU, memoria ou locks criticos ultrapassam os limites.
+              {t("history.schedulerDescription")}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <StatusBadge
               status={data.incidentsPage.totalItems > 0 ? "warning" : "healthy"}
-              label={loading ? "Carregando" : `${data.incidentsPage.totalItems} registros`}
+              label={loading ? t("history.loading") : t("history.records", { count: data.incidentsPage.totalItems })}
             />
             <Button
               type="button"
@@ -179,7 +181,7 @@ export function History() {
               className="border-[#ef4444]/30 text-[#fca5a5] hover:bg-[#ef4444]/10 hover:text-[#fecaca]"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              {clearing ? "Limpando..." : "Limpar historico"}
+              {clearing ? t("history.clearing") : t("history.clearHistory")}
             </Button>
           </div>
         </div>
@@ -187,12 +189,16 @@ export function History() {
         <DataTable
           data={incidents}
           columns={columns}
-          emptyMessage={loading ? "Carregando historico..." : "Nenhum incidente historico registrado ainda"}
+          emptyMessage={loading ? t("history.loadingHistory") : t("history.noIncidents")}
         />
 
         <div className="mt-5 flex flex-col gap-3 border-t border-[#27272a] pt-4 md:flex-row md:items-center md:justify-between">
           <p className="text-sm text-[#71717a]">
-            Pagina {data.incidentsPage.page} de {data.incidentsPage.totalPages} • {data.incidentsPage.totalItems} registros no total
+            {t("history.pagination", {
+              page: data.incidentsPage.page,
+              totalPages: data.incidentsPage.totalPages,
+              totalItems: data.incidentsPage.totalItems,
+            })}
           </p>
 
           <Pagination className="mx-0 w-auto justify-start md:justify-end">
@@ -249,20 +255,20 @@ export function History() {
       <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
         <AlertDialogContent className="border-[#27272a] bg-[#111116] text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle>Limpar historico operacional</AlertDialogTitle>
+            <AlertDialogTitle>{t("history.clearDialogTitle")}</AlertDialogTitle>
             <AlertDialogDescription className="text-[#a1a1aa]">
-              Esta acao remove permanentemente todos os incidentes da tela History.
+              {t("history.clearDialogDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="border-[#27272a] bg-[#0a0a0f] text-white hover:bg-[#1f1f28]">
-              Cancelar
+              {t("common.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => void clearHistory()}
               className="bg-[#ef4444] text-white hover:bg-[#dc2626]"
             >
-              Apagar historico
+              {t("history.deleteHistory")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -287,14 +293,14 @@ function buildPagination(currentPage: number, totalPages: number): Array<number 
   return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
 }
 
-function incidentTypeLabel(value: string) {
+function incidentTypeLabel(value: string, t: (key: string) => string) {
   switch (value) {
     case "CPU_HIGH":
-      return "CPU alta";
+      return t("history.cpuHigh");
     case "MEMORY_HIGH":
-      return "Memoria alta";
+      return t("history.memoryHigh");
     case "LOCK_BLOCKING":
-      return "Lock bloqueante";
+      return t("history.lockBlocking");
     default:
       return value;
   }
@@ -307,14 +313,14 @@ function mapSeverity(value: string): "healthy" | "warning" | "critical" | "info"
   return "healthy";
 }
 
-function severityLabel(value: string) {
+function severityLabel(value: string, t: (key: string) => string) {
   switch (value) {
     case "critical":
-      return "Critical";
+      return t("history.critical");
     case "warning":
-      return "Warning";
+      return t("history.warning");
     case "info":
-      return "Info";
+      return t("history.info");
     default:
       return value;
   }

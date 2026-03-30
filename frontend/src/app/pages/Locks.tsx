@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { DataTable, Column } from "../components/DataTable";
 import { StatusBadge } from "../components/StatusBadge";
 import { Button } from "../components/ui/button";
@@ -54,6 +55,7 @@ async function fetchLocks(): Promise<LockRow[]> {
 }
 
 export function Locks() {
+  const { t } = useTranslation();
   const { data, loading, error, refresh } = useApiPolling(fetchLocks, {
     initialData: [],
     intervalMs: 15000,
@@ -82,9 +84,9 @@ export function Locks() {
       const response = await api.terminateSession(lock.pid);
       setLockToKill(null);
       setSelectedLock(null);
-      toast.success(response.message || `Sessão ${lock.pid} finalizada.`);
+      toast.success(response.message || t("locks.sessionTerminated", { pid: lock.pid }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao encerrar a sessão.");
+      toast.error(err instanceof Error ? err.message : t("locks.terminationFailed"));
     }
   };
 
@@ -95,32 +97,32 @@ export function Locks() {
       sortable: true,
       render: (row) => <span className="font-mono text-sm font-medium">{row.pid}</span>,
     },
-    { key: "userName", header: "User", sortable: true },
-    { key: "database", header: "Database", sortable: true },
+    { key: "userName", header: t("locks.user"), sortable: true },
+    { key: "database", header: t("locks.database"), sortable: true },
     {
       key: "queryDuration",
-      header: "Duração",
+      header: t("locks.duration"),
       sortable: true,
       render: (row) => formatDuration(row.queryDuration),
     },
-    { key: "lockType", header: "Lock Type", sortable: true },
+    { key: "lockType", header: t("locks.lockType"), sortable: true },
     {
       key: "query",
-      header: "Query",
+      header: t("locks.query"),
       render: (row) => (
         <span className="block max-w-md truncate font-mono text-xs text-[#a1a1aa]">
-          {row.query || "Query não disponível"}
+          {row.query || t("locks.queryUnavailable")}
         </span>
       ),
     },
     {
       key: "status",
-      header: "Status",
+      header: t("locks.status"),
       render: (row) => <StatusBadge status={row.status} />,
     },
     {
       key: "actions",
-      header: "Actions",
+      header: t("locks.actions"),
       render: (row) => (
         <Button
           variant="ghost"
@@ -132,7 +134,7 @@ export function Locks() {
           className="text-[#ef4444] hover:bg-[#ef4444]/10 hover:text-[#ef4444]"
         >
           <XCircle className="mr-1 h-4 w-4" />
-          Kill
+          {t("locks.kill")}
         </Button>
       ),
     },
@@ -141,18 +143,18 @@ export function Locks() {
   return (
     <div className="space-y-6">
       {error && (
-        <StatusBanner status="error" title="Falha ao carregar locks" description={error} />
+        <StatusBanner status="error" title={t("locks.errorBanner")} description={error} />
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <StatCard title="Total Locks" value={data.length} color="bg-[#3b82f6]/10 text-[#3b82f6]" />
+        <StatCard title={t("locks.totalLocks")} value={data.length} color="bg-[#3b82f6]/10 text-[#3b82f6]" />
         <StatCard
-          title="Blocked Sessions"
+          title={t("locks.blockedSessions")}
           value={data.filter((lock) => lock.status === "blocked").length}
           color="bg-[#ef4444]/10 text-[#ef4444]"
         />
         <StatCard
-          title="Blocking Sessions"
+          title={t("locks.blockingSessions")}
           value={data.filter((lock) => lock.status === "blocking").length}
           color="bg-[#f59e0b]/10 text-[#f59e0b]"
         />
@@ -162,7 +164,7 @@ export function Locks() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#71717a]" />
           <Input
-            placeholder="Buscar por PID, usuário, database ou query..."
+            placeholder={t("locks.searchPlaceholder")}
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             className="border-[#27272a] bg-[#111116] pl-10 text-white"
@@ -174,9 +176,9 @@ export function Locks() {
         <div className="flex items-start space-x-3 rounded-lg border border-[#ef4444]/30 bg-[#ef4444]/10 p-4">
           <AlertTriangle className="mt-0.5 h-5 w-5 text-[#ef4444]" />
           <div>
-            <h3 className="text-sm font-medium text-[#ef4444]">Locks críticos detectados</h3>
+            <h3 className="text-sm font-medium text-[#ef4444]">{t("locks.criticalDetected")}</h3>
             <p className="mt-1 text-sm text-[#ef4444]/80">
-              {data.filter((lock) => lock.severity === "high").length} lock(s) com alto impacto potencial.
+              {t("locks.criticalCount", { count: data.filter((lock) => lock.severity === "high").length })}
             </p>
           </div>
         </div>
@@ -186,34 +188,34 @@ export function Locks() {
         data={filteredLocks}
         columns={columns}
         onRowClick={setSelectedLock}
-        emptyMessage={loading ? "Carregando locks..." : "Nenhum lock ativo encontrado"}
+        emptyMessage={loading ? t("locks.loadingLocks") : t("locks.noLocksFound")}
       />
 
       <Dialog open={!!selectedLock} onOpenChange={() => setSelectedLock(null)}>
         <DialogContent className="flex max-h-[85vh] max-w-3xl flex-col overflow-hidden border-[#27272a] bg-[#111116] text-white">
           <DialogHeader>
-            <DialogTitle>Lock Details - PID {selectedLock?.pid}</DialogTitle>
+            <DialogTitle>{t("locks.lockDetailsTitle", { pid: selectedLock?.pid })}</DialogTitle>
             <DialogDescription className="text-[#a1a1aa]">
-              Informações completas do lock reportado pelo backend.
+              {t("locks.lockDetailsDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="min-h-0 space-y-4 overflow-y-auto py-4 pr-2">
-            <DetailRow label="Process ID" value={selectedLock?.pid} />
-            <DetailRow label="User" value={selectedLock?.userName} />
-            <DetailRow label="Database" value={selectedLock?.database} />
-            <DetailRow label="Duration" value={formatDuration(selectedLock?.queryDuration)} />
-            <DetailRow label="Lock Type" value={selectedLock?.lockType} />
-            <DetailRow label="State" value={selectedLock?.state} />
-            <DetailRow label="Status" value={selectedLock && <StatusBadge status={selectedLock.status} />} />
-            <DetailRow label="Application" value={selectedLock?.applicationName ?? "N/A"} />
-            <DetailRow label="Relation" value={selectedLock?.relation ?? "N/A"} />
-            <DetailRow label="Client" value={selectedLock?.clientAddr ?? "N/A"} />
-            <DetailRow label="Started" value={formatRelativeTimestamp(selectedLock?.queryStart)} />
+            <DetailRow label={t("locks.processId")} value={selectedLock?.pid} />
+            <DetailRow label={t("locks.user")} value={selectedLock?.userName} />
+            <DetailRow label={t("locks.database")} value={selectedLock?.database} />
+            <DetailRow label={t("locks.duration")} value={formatDuration(selectedLock?.queryDuration)} />
+            <DetailRow label={t("locks.lockType")} value={selectedLock?.lockType} />
+            <DetailRow label={t("locks.state")} value={selectedLock?.state} />
+            <DetailRow label={t("locks.status")} value={selectedLock && <StatusBadge status={selectedLock.status} />} />
+            <DetailRow label={t("locks.application")} value={selectedLock?.applicationName ?? t("common.na")} />
+            <DetailRow label={t("locks.relation")} value={selectedLock?.relation ?? t("common.na")} />
+            <DetailRow label={t("locks.client")} value={selectedLock?.clientAddr ?? t("common.na")} />
+            <DetailRow label={t("locks.started")} value={formatRelativeTimestamp(selectedLock?.queryStart)} />
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[#a1a1aa]">Query</label>
+              <label className="text-sm font-medium text-[#a1a1aa]">{t("locks.query")}</label>
               <div className="rounded-lg border border-[#27272a] bg-[#0a0a0f] p-4">
                 <code className="whitespace-pre-wrap font-mono text-xs text-[#e4e4e7]">
-                  {selectedLock?.query || "Query não disponível"}
+                  {selectedLock?.query || t("locks.queryUnavailable")}
                 </code>
               </div>
             </div>
@@ -224,7 +226,7 @@ export function Locks() {
               onClick={() => setSelectedLock(null)}
               className="border-[#27272a] text-white hover:bg-[#1f1f28]"
             >
-              Close
+              {t("common.close")}
             </Button>
             <Button
               variant="destructive"
@@ -236,7 +238,7 @@ export function Locks() {
               className="bg-[#ef4444] text-white hover:bg-[#dc2626]"
             >
               <XCircle className="mr-2 h-4 w-4" />
-              Kill Session
+              {t("locks.killSession")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -247,21 +249,21 @@ export function Locks() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center space-x-2">
               <AlertTriangle className="h-5 w-5 text-[#ef4444]" />
-              <span>Confirmar encerramento</span>
+              <span>{t("locks.confirmTitle")}</span>
             </AlertDialogTitle>
             <AlertDialogDescription className="text-[#a1a1aa]">
-              Finalizar a sessão {lockToKill?.pid} no PostgreSQL.
+              {t("locks.confirmDesc", { pid: lockToKill?.pid })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="border-[#27272a] text-white hover:bg-[#1f1f28]">
-              Cancelar
+              {t("common.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => lockToKill && handleKillSession(lockToKill)}
               className="bg-[#ef4444] text-white hover:bg-[#dc2626]"
             >
-              Terminate Session
+              {t("locks.terminateSession")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
