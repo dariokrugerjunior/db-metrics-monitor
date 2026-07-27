@@ -19,6 +19,14 @@ O projeto foi desenhado para responder duas perguntas principais:
 - `frontend`: interface React + Vite
 - `data/`: persistência local de histórico operacional e configuração runtime
 - `docs/screenshots/`: capturas de tela da aplicação
+- `docs/adr/`: registros de decisão de arquitetura
+
+### Por que foi construído assim
+
+📐 **[Registros de Decisão de Arquitetura](docs/adr/)** — por que o diagnóstico é calculado em
+Java **antes** de chamar o LLM (e o modelo só redige), por que o contexto enviado é recortado,
+por que o health score é 100 menos penalidades explicáveis, por que as anomalias saem de
+baseline histórica em vez de limiar fixo — e o que cada uma dessas escolhas custa.
 
 ## Destaque Principal: Análise com IA
 
