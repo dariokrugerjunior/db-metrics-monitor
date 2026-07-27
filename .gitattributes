@@ -1,0 +1,7 @@
+# Componentes de UI gerados pelo CLI do shadcn/ui (MIT) - código de terceiros,
+# não autoral deste projeto. Excluídos das estatísticas de linguagem do GitHub.
+frontend/src/app/components/ui/** linguist-vendored
+
+# Lockfiles são gerados por ferramenta.
+frontend/package-lock.json linguist-generated
+frontend/pnpm-lock.yaml    linguist-generated

@@ -1,5 +1,11 @@
 # DB Metrics Monitor
 
+[![CI](https://github.com/dariokrugerjunior/db-metrics-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/dariokrugerjunior/db-metrics-monitor/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Java 21](https://img.shields.io/badge/Java-21-orange)
+![Spring Boot 3.4](https://img.shields.io/badge/Spring%20Boot-3.4-6DB33F)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-observability-4169E1)
+
 Plataforma de observabilidade operacional para PostgreSQL com backend em Spring Boot, frontend em React e uma camada de análise assistida por IA orientada a operação.
 
 O projeto foi desenhado para responder duas perguntas principais:
